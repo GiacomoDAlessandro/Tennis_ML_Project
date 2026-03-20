@@ -19,7 +19,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-df = pd.read_csv('2025.csv')
+df = pd.read_csv('Data/2025.csv')
 
 # Minimal columns needed for player profiles (leave other missing values alone)
 stat_cols = [
