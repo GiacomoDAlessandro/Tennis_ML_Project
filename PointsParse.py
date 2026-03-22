@@ -1,7 +1,3 @@
-import pandas
-
-df = pandas.read_csv('Data/charting-m-points-2020s.csv')
-
 """
 =============================================================================
 TENNIS MATCH CHARTING PROJECT — DATA NOTATION REFERENCE
@@ -206,3 +202,72 @@ rally_forced    : Points won because opponent made a forced error
 unforced        : Points LOST because this player made an unforced error
                   NOTE: this is errors made, not errors by opponent
 """
+from asyncio.windows_events import NULL
+
+import pandas as pd
+
+df = pd.read_csv('Data/charting-m-points-2020s.csv', low_memory=False)
+
+print(df['match_id'])
+
+def get_players_from_match_id(match_id: str) -> tuple:
+    #Splits match_id between '-'
+    parts = match_id.split('-')
+    rounds = {'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'R128', 'RR', 'BR'}
+    #Fixes issue of players having hyphens in their name "Auger-Aliassime"
+    for i, part in enumerate(parts):
+        if part in rounds:
+            player1 = parts[i+1]
+            player2 = '_'.join(parts[i+2:])
+            return player1.replace('_', ' '), player2.replace('_', ' ')
+
+class Point:
+    def __init__(self, row):
+        self.match_id = row['match_id']
+        self.score = row['Pts']
+        self.game_number = row['Gm#']
+        self.pt_num = row['Pt']
+        self.set1 = row['Set1']
+        self.set2 = row['Set2']
+        self.gm1 = row['Gm1']
+        self.gm2 = row['Gm2']
+        self.winner = row['PtWinner']
+        self.server = row['Svr']
+        self.first = row['1st']
+        self.second = row['2nd']
+        self.parsed_shots = None
+        return
+
+    def get_shots(self):
+        if self.parsed_shots is None:
+            self.parsed_shots = parse_shot_sequence(self)
+        return self.parsed_shots
+
+
+
+#Decodes the actual point, forehand deep to other forehand, etc.
+def parse_shot_sequence(curr_points: Point) -> list[dict]:
+    shots = []
+
+
+
+    return shots
+
+
+class Match:
+    def __init__(self, match_id, points):
+        self.match_id = match_id
+        self.points = []
+        for _, row in group.iterrows():
+            point = Point(point)
+            self.points.append(points)
+        return
+
+#Matches Array
+matches = []
+#Load all matches into array
+for match_id, group in df.groupby('match_id'):
+    group = group.sort_values('Pt')
+    match = Match(match_id, group)
+    matches.append(match)
+
