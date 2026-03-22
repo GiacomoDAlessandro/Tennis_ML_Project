@@ -202,23 +202,84 @@ rally_forced    : Points won because opponent made a forced error
 unforced        : Points LOST because this player made an unforced error
                   NOTE: this is errors made, not errors by opponent
 """
-from asyncio.windows_events import NULL
 
 import pandas as pd
 
 df = pd.read_csv('Data/charting-m-points-2020s.csv', low_memory=False)
 
-print(df['match_id'])
+SERVE_DIRECTIONS = {
+    "4": "wide",
+    "5": "body",
+    "6": "T"
+}
+
+SHOT_TYPES = {
+    "f": "forehand",
+    "b": "backhand",
+    "r": "forehand slice",
+    "s": "backhand slice",
+    "v": "forehand volley",
+    "z": "backhand volley",
+    "o": "forehand overhead",
+    "p": "backhand overhead",
+    "u": "forehand drop shot",
+    "y": "backhand drop shot",
+    "l": "forehand lob",
+    "m": "backhand lob",
+    "t": "forehand trick shot",
+    "q": "backhand trick shot",
+    "h": "forehand half volley",
+    "i": "backhand half volley",
+    "j": "forehand swinging volley",
+    "k": "backhand swinging volley",
+}
+
+DIRECTIONS = {
+    "1": "Down the line",  # Crosscourt for lefties
+    "2": "Crosscourt",
+    "3": "Middle of court",
+    "7": "Down the line(wide)",
+    "8": "Crosscourt(wide)",
+    "9": "Middle(wide)"
+}
+
+DEPTH = {
+    "+": "Player approached net on shot"
+}
+
+OUTCOMES = {
+    "*": "Ace",
+    "#": "Clean Winner",
+    "@": "Unforced error",
+    "!": "Forced error",
+    "n": "Net error",
+    "d": "Deep error",
+    "w": "Wide error",
+    "x": "Wide and net error",
+    "g": "General Error"
+}
+
+OTHER_SYMBOLS = {
+    "c": "Let serve",
+    ";": "Second bounce (Hawkeye Challenge)",
+    "^": "Player came to net",
+    "-": "Player retreated from net",
+    "=": "Shot landed on the line",
+    "Q": "Medical timeout called",
+    "S": "Serve went in but rally not charted",
+    "R": "Return not charted"
+}
+
 
 def get_players_from_match_id(match_id: str) -> tuple:
-    #Splits match_id between '-'
+    # Splits match_id between '-'
     parts = match_id.split('-')
     rounds = {'F', 'SF', 'QF', 'R16', 'R32', 'R64', 'R128', 'RR', 'BR'}
-    #Fixes issue of players having hyphens in their name "Auger-Aliassime"
+    # Fixes issue of players having hyphens in their name "Auger-Aliassime"
     for i, part in enumerate(parts):
         if part in rounds:
-            player1 = parts[i+1]
-            player2 = '_'.join(parts[i+2:])
+            player1 = parts[i + 1]
+            player2 = '_'.join(parts[i + 2:])
             return player1.replace('_', ' '), player2.replace('_', ' ')
 
 class Point:
@@ -244,78 +305,45 @@ class Point:
         return self.parsed_shots
 
 
-
-#Decodes the actual point, forehand deep to other forehand, etc.
+# Decodes the actual point, forehand deep to other forehand, etc.
 def parse_shot_sequence(curr_points: Point) -> list[dict]:
     shots = []
 
-    counter = 0
-    for char in curr_points.first:
-        if counter == 0:
+    current_shot = {}
+    if pd.isna(curr_points.second):
+        sequence = curr_points.first
+    else:
+        sequence = curr_points.second
+        miss = curr_points.first
+        fault_outcome = OUTCOMES.get(miss[1]) if len(miss) > 1 else None
+        current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[miss[0]], "outcome": fault_outcome}
+        shots.append(current_shot)
 
-        SHOT_TYPES = {
-            "f": "forehand",
-            "b": "backhand",
-            "r": "forehand slice",
-            "s": "backhand slice",
-            "v": "forehand volley",
-            "z": "backhand volley",
-            "o": "forehand overhead",
-            "p": "backhand overhead",
-            "u": "forehand drop shot",
-            "y": "backhand drop shot",
-            "l": "forehand lob",
-            "m": "backhand lob",
-            "t": "forehand trick shot",
-            "q": "backhand trick shot",
-            "h": "forehand half volley",
-            "i": "backhand half volley",
-            "j": "forehand swinging volley",
-            "k": "backhand swinging volley",
-        }
+    #Ace handling, if ace the data is simply (ex. 4*)
+    if sequence[0] in SERVE_DIRECTIONS:
+        current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[sequence[0]], "outcome": None}
+        if len(sequence) > 1 and sequence[1] in OUTCOMES:
+            current_shot["outcome"] = OUTCOMES[sequence[1]]
+            shots.append(current_shot)
+            current_shot = {}
+            sequence = sequence[2:]  #chop both serve direction and outcome
+        else:
+            sequence = sequence[1:]  #just chop serve direction
 
-        DIRECTIONS = {
-            "1": "Down the line", #Crosscourt for lefties
-            "2": "Crosscourt",
-            "3": "Middle of court",
-            "7": "Down the line(wide)",
-            "8": "Crosscourt(wide)",
-            "9": "Middle(wide)"
-        }
+    for char in sequence:
+        if char in SHOT_TYPES:
+            if current_shot:
+                shots.append(current_shot)
+            current_shot = {"type": SHOT_TYPES[char], "direction": None, "outcome": None}
+        elif char in DIRECTIONS:
+            current_shot["direction"] = DIRECTIONS[char]
+        elif char in OUTCOMES:
+            current_shot["outcomes"] = OUTCOMES[char]
+        elif char in OTHER_SYMBOLS:
+            current_shot["other"] = OTHER_SYMBOLS[char]
 
-        OUTCOMES = {
-            "*": "Ace",
-            "#": "Clean Winner",
-            "@": "Unforced error",
-            "!": "Forced error",
-            "n": "Net error",
-            "d": "Deep error",
-            "w": "Wide error",
-            "x": "Wide and net error",
-            "g": "General Error"
-        }
-
-        OTHER_SYMBOLS = {
-            "c": "Let serve",
-            ";": "Second bounce (Hawkeye Challenge)",
-            "^": "Player came to net",
-            "-": "Player retreated from net",
-            "=": "Shot landed on the line",
-            "Q": "Medical timeout called",
-            "S": "Serve went in but rally not charted",
-            "R": "Return not charted"
-        }
-
-
-        shots.append({
-            "type": SHOT_TYPES.get(char),
-            "direction":DIRECTIONS.get(char),
-            "outcome": OUTCOMES.get(char),
-            "other": OTHER_SYMBOLS.get(char)
-        })
-
-
-
+    if current_shot:
+        shots.append(current_shot)
 
     return shots
 
@@ -324,16 +352,15 @@ class Match:
     def __init__(self, match_id, points):
         self.match_id = match_id
         self.points = []
-        for _, row in group.iterrows():
-            point = Point(row) # Changed 'point' to 'row'
-            self.points.append(point) # Changed 'points' to 'point'
+        for _, row in points.iterrows():
+            point = Point(row)  # Changed 'point' to 'row'
+            self.points.append(point)  # Changed 'points' to 'point'
         return
 
-#Matches Array
+
 matches = []
-#Load all matches into array
+ #Load all matches into array
 for match_id, group in df.groupby('match_id'):
     group = group.sort_values('Pt')
     match = Match(match_id, group)
     matches.append(match)
-
