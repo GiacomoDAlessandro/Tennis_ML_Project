@@ -91,7 +91,7 @@ export default function Home() {
 
           <div className="mt-5 flex justify-center overflow-auto rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-900/40">
             <CourtErrorBoundary>
-              <TennisCourt surface="hard" />
+              <TennisCourt surface="grass" />
             </CourtErrorBoundary>
           </div>
         </section>
