@@ -169,8 +169,8 @@ export default function TennisCourt({
 
     /* Left post center (world): (doublesLeft, NET_Y). Gap before umpire. */
     const postLeftTangent = doublesLeft - POST_R;
-    const umpireW = 35;
-    const umpireH = 39;
+    const umpireW = 34;
+    const umpireH = 37;
     const umpireRight = postLeftTangent - POST_GAP;
     const umpireX = umpireRight - umpireW;
     const umpireY = NET_Y - umpireH / 2;
