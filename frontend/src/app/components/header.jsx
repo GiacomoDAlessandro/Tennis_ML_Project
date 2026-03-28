@@ -11,7 +11,7 @@ export default function Header() {
         </Link>
         <Link
           href="/why"
-          className="text-base font-bold tracking-tight text-zinc-900 transition-opacity hover:opacity-70">
+          className="text-base font-semibold tracking-tight text-zinc-900 transition-opacity hover:opacity-70">
           Why
         </Link>
       </div>

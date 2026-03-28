@@ -25,7 +25,6 @@ def get_player_serves(player_name: str, surface: str = None):
     .or_(f'player1.eq.{player_name},player2.eq.{player_name}')\
     .execute()
 
-
     matches = result.data
     return {"matches": matches}
 

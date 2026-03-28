@@ -89,15 +89,14 @@ export default function TennisCourt({
 
     const courtColors = {
         hard: {
-            court: "#4a90d9",
+            court: "#1d30a8",
             lines: "#ffffff",
             posts: "#22331e",
-            outArea: "#2e572d",
+            outArea: "#42713d",
             sideLine: {
                 benchSeat: "#1e3a5f",
                 benchLeg: "#0f172a",
-                umpire: "#0f172a",
-                umpireAccent: "#2563eb",
+                umpire: "#1b2c50",
                 towel: "#e2e8f0",
             },
         },
@@ -222,14 +221,6 @@ export default function TennisCourt({
                             height={umpireH}
                             fill={sl.umpire}
                             cornerRadius={3}
-                        />
-                        <Rect
-                            x={3}
-                            y={5}
-                            width={28}
-                            height={26}
-                            fill={sl.umpireAccent}
-                            cornerRadius={2}
                         />
                     </Group>
                 </Group>
