@@ -1,7 +1,7 @@
 "use client";
 import Header from "../components/header.jsx";
 import TennisCourt from "../components/TennisCourt.jsx";
-import { useState, useEffect, useMemo } from "react";
+import {useState, useEffect, useMemo} from "react";
 
 import {
     Combobox,
@@ -19,6 +19,9 @@ export default function MatchSimulatorPage() {
     const [playerTwo, setPlayerTwo] = useState(null);
     const [queryOne, setQueryOne] = useState("");
     const [queryTwo, setQueryTwo] = useState("");
+    const [clicked, setClicked] = useState(false);
+    const [onePlayer, setOnePlayer] = useState(false);
+    const [twoPlayers, setTwoPlayers] = useState(false);
 
     useEffect(() => {
         fetch("http://localhost:8000/getAllPlayers")
@@ -49,46 +52,90 @@ export default function MatchSimulatorPage() {
             <main className="flex flex-1 flex-col items-center px-4 py-8 sm:px-6 sm:py-10">
                 <div
                     className="w-full gap-5 max-w-[520px] rounded-2xl border border-zinc-200/90 flex justify-center items-center bg-white p-4 shadow-sm sm:p-6">
-                    <Combobox
-                        items={playerOneOptions}
-                        value={playerOne}
-                        onValueChange={setPlayerOne}
-                        onInputValueChange={setQueryOne}
-                    >
-                        <ComboboxInput placeholder="Select Player One"/>
-                        <ComboboxContent>
-                            <ComboboxList>
-                                {(item) => (
-                                    <ComboboxItem key={item} value={item}>
-                                        {item}
-                                    </ComboboxItem>
-                                )}
-                            </ComboboxList>
-                            <ComboboxEmpty>No players found</ComboboxEmpty>
-                        </ComboboxContent>
-                    </Combobox>
-                    <Combobox
-                        items={playerTwoOptions}
-                        value={playerTwo}
-                        onValueChange={setPlayerTwo}
-                        onInputValueChange={setQueryTwo}
-                    >
-                        <ComboboxInput placeholder="Select Player Two"/>
-                        <ComboboxContent>
-                            <ComboboxList>
-                                {(item) => (
-                                    <ComboboxItem key={item} value={item}>
-                                        {item}
-                                    </ComboboxItem>
-                                )}
-                            </ComboboxList>
-                            <ComboboxEmpty>No players found</ComboboxEmpty>
-                        </ComboboxContent>
-                    </Combobox>
 
+                    {!clicked && (
+                        <div className={"flex gap-3"}>
+                            <button
+                                onClick={() => {
+                                    setOnePlayer(true)
+                                    setClicked(true)
+                                }}
+                                className="flex h-11 w-50 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                View One Player
+                            </button>
+                            <button onClick={() => {
+                                setTwoPlayers(true)
+                                setClicked(true)
+                            }}
+                                    className="flex h-11 w-50 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                Compare Players
+                            </button>
+                        </div>
+                    )}
+                    {twoPlayers && (
+                        <div className={"flex gap-3"}>
+                            <Combobox
+                                items={playerOneOptions}
+                                value={playerOne}
+                                onValueChange={setPlayerOne}
+                                onInputValueChange={setQueryOne}
+                            >
+                                <ComboboxInput placeholder="Select Player One"/>
+                                <ComboboxContent>
+                                    <ComboboxList>
+                                        {(item) => (
+                                            <ComboboxItem key={item} value={item}>
+                                                {item}
+                                            </ComboboxItem>
+                                        )}
+                                    </ComboboxList>
+                                    <ComboboxEmpty>No players found</ComboboxEmpty>
+                                </ComboboxContent>
+                            </Combobox>
+                            <Combobox
+                                items={playerTwoOptions}
+                                value={playerTwo}
+                                onValueChange={setPlayerTwo}
+                                onInputValueChange={setQueryTwo}
+                            >
+                                <ComboboxInput placeholder="Select Player Two"/>
+                                <ComboboxContent>
+                                    <ComboboxList>
+                                        {(item) => (
+                                            <ComboboxItem key={item} value={item}>
+                                                {item}
+                                            </ComboboxItem>
+                                        )}
+                                    </ComboboxList>
+                                    <ComboboxEmpty>No players found</ComboboxEmpty>
+                                </ComboboxContent>
+                            </Combobox>
+                        </div>
+                    )}
+                    {onePlayer && (
+                        <Combobox
+                            items={playerTwoOptions}
+                            value={playerTwo}
+                            onValueChange={setPlayerTwo}
+                            onInputValueChange={setQueryTwo}
+                        >
+                            <ComboboxInput placeholder="Select Player Two"/>
+                            <ComboboxContent>
+                                <ComboboxList>
+                                    {(item) => (
+                                        <ComboboxItem key={item} value={item}>
+                                            {item}
+                                        </ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                                <ComboboxEmpty>No players found</ComboboxEmpty>
+                            </ComboboxContent>
+                        </Combobox>
+                    )}
                     {/*<TennisCourt surface="clay" fitViewport/>*/}
                 </div>
             </main>
         </div>
-    );
+    )
+        ;
 }
