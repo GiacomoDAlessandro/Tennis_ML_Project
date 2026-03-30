@@ -51,8 +51,17 @@ export default function MatchSimulatorPage() {
             <Header/>
             <main className="flex flex-1 flex-col items-center px-4 py-8 sm:px-6 sm:py-10">
                 <div
-                    className="w-full gap-5 max-w-[520px] rounded-2xl border border-zinc-200/90 flex justify-center items-center bg-white p-4 shadow-sm sm:p-6">
-
+                    className=" relative w-full flex-col min-h-[180px] gap-5 max-w-[520px] rounded-2xl border border-zinc-200/90 flex justify-center items-center bg-white p-4 shadow-sm sm:p-6">
+                    {clicked && (
+                        <button className={"top-2 left-4 absolute text-sm text-zinc-500 hover:text-zinc-900 font-semibold"}
+                                onClick={() => {
+                                    setClicked(false)
+                                    setOnePlayer(false)
+                                    setTwoPlayers(false)
+                                }}>
+                            ←
+                        </button>
+                    )}
                     {!clicked && (
                         <div className={"flex gap-3"}>
                             <button
@@ -73,7 +82,7 @@ export default function MatchSimulatorPage() {
                         </div>
                     )}
                     {twoPlayers && (
-                        <div className={"flex gap-3"}>
+                        <div className={"flex flex-col w-full pt-6 gap-3"}>
                             <Combobox
                                 items={playerOneOptions}
                                 value={playerOne}
