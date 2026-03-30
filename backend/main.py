@@ -21,13 +21,17 @@ def root():
 @app.get("/getAllPlayers")
 def get_players():
     result = supabase.table('matches')\
-    .select('player1, player2').execute()
+    .select('player1, player2')\
+    .limit(10000)\
+    .execute()
 
     players = set()
-    for match in result.dad:
-        players.add(match['player1'])
-        players.add(match['player2'])
-    return {"players" : list(players)}
+    for match in result.data:
+        if match['player1']:
+            players.add(match['player1'])
+        if match['player2']:
+            players.add(match['player2'])
+    return {"players" : sorted(list(players))}
 
 
 @app.get("/player/{player_name}/serves")
