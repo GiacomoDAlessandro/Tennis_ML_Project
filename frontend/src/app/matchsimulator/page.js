@@ -85,6 +85,7 @@ export default function MatchSimulatorPage() {
                             <ComboboxEmpty>No players found</ComboboxEmpty>
                         </ComboboxContent>
                     </Combobox>
+
                     {/*<TennisCourt surface="clay" fitViewport/>*/}
                 </div>
             </main>

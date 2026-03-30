@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,32 +17,27 @@ app.add_middleware(
 def root():
     return {"status": "ok"}
 
+
 @app.get("/getAllPlayers")
 def get_players():
-    result = supabase.table('matches')\
-    .select('player1, player2')\
-    .limit(10000)\
-    .execute()
-
     players = set()
-    for match in result.data:
-        if match['player1']:
-            players.add(match['player1'])
-        if match['player2']:
-            players.add(match['player2'])
-    return {"players" : sorted(list(players))}
+    page = 0
+    page_size = 1000
 
+    while True:
+        result = supabase.table('matches') \
+            .select('player1, player2') \
+            .range(page * page_size, (page + 1) * page_size - 1) \
+            .execute()
 
-@app.get("/player/{player_name}/serves")
-def get_player_serves(player_name: str, surface: str = None):
-    result = supabase.table('matches')\
-    .select('match_id, player1, player2, surface')\
-    .or_(f'player1.eq.{player_name},player2.eq.{player_name}')\
-    .execute()
+        for match in result.data:
+            if match['player1']:
+                players.add(match['player1'])
+            if match['player2']:
+                players.add(match['player2'])
+        if len(result.data) < page_size:
+            break
 
-    matches = result.data
-    return {"matches": matches}
+        page += 1
 
-
-
-
+    return {"players": sorted(list(players))}
