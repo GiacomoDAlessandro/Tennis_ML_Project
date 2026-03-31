@@ -19,8 +19,13 @@ export default function OnePlayerBox({
                                          onView,
                                      }) {
 
+
     const [surface, setSurface] = useState(null);
+
+    //Warning
     const [warningOpen, setWarningOpen] = useState(false);
+
+
     const filterByPrefix = (list, query) => {
         const q = query.trim().toLowerCase();
         if (!q) return list;
@@ -48,6 +53,7 @@ export default function OnePlayerBox({
                 value={playerOne}
                 onValueChange={setPlayerOne}
                 onInputValueChange={setQueryOne}>
+
                 <ComboboxInput placeholder="Select Player"/>
                 <ComboboxContent>
                     <ComboboxList>

@@ -27,7 +27,8 @@ export default function MatchSimulatorPage() {
     const [tennisCourt, setTennisCourt] = useState(false);
     const [chooseSurface, setChooseSurface] = useState(false);
     const surfaces = ["clay", "hard", "grass"];
-    const [selectedSurface, setSelectedSurface] = useState(null)
+    const [selectedSurfaceOne, setSelectedSurfaceOne] = useState(null);
+    const [selectedSurfaceTwo, setSelectedSurfaceTwo] = useState(null);
 
     //Getting all players
     useEffect(() => {
@@ -95,6 +96,13 @@ export default function MatchSimulatorPage() {
                             setTennisCourt={setTennisCourt}
                         />
                     )}
+
+                    {(twoPlayers && tennisCourt) && (
+                        <div className={"flex gap-5 flex-col items-center justify-center"}>
+                            <TennisCourt surface={selectedSurfaceOne}/>
+                            <TennisCourt surface={selectedSurfaceTwo}/>
+                        </div>
+                    )}
                     {/*When only one player is viewed*/}
                     {onePlayer && (
                         <OnePlayerBox
@@ -105,14 +113,13 @@ export default function MatchSimulatorPage() {
                             setQueryOne={setQueryOne}
                             surfaces={surfaces}
                             onView={(surface) => {
-                                setSelectedSurface(surface);
+                                setSelectedSurfaceOne(surface);
                                 setTennisCourt(true)
                             }}
                         />
                     )}
-
-                    {tennisCourt && (
-                        <TennisCourt surface={selectedSurface}/>
+                    {onePlayer && tennisCourt && (
+                        <TennisCourt surface={selectedSurfaceOne}/>
                     )}
 
 

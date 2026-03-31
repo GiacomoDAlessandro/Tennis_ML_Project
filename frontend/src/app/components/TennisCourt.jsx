@@ -11,33 +11,56 @@ const RIGHT_OUT = 50;
 const STAGE_W = SIDE_PAD + COURT_W + RIGHT_OUT;
 const STAGE_H = COURT_H;
 
-const NET_Y = 435;
-//Right post size
-const POST_R = 5;
-//Distance of umpire stand from net post
-const POST_GAP = 30;
+const pctX = (value) => (value / COURT_W) * 100;
+const pctY = (value) => (value / COURT_H) * 100;
+const courtX = (percent) => (percent / 100) * COURT_W;
+const courtY = (percent) => (percent / 100) * COURT_H;
+
+//Percentage based coordinates so I can change the size of the court and have it look the same
+const NET_Y_PCT = pctY(435);
+const POST_R_PCT = pctX(5);
+const POST_GAP_PCT = pctX(30);
+
+const DOUBLES_LEFT_X_PCT = pctX(45);
+const DOUBLES_RIGHT_X_PCT = pctX(405);
+const SINGLES_LEFT_X_PCT = pctX(90);
+const SINGLES_RIGHT_X_PCT = pctX(360);
+const COURT_INNER_X_PCT = pctX(45);
+const COURT_INNER_Y_PCT = pctY(45);
+const COURT_INNER_W_PCT = pctX(360);
+const COURT_INNER_H_PCT = pctY(780);
+
+const UMP_W_PCT = pctX(34);
+const UMP_H_PCT = pctY(37);
+const UMP_INNER_X_PCT = pctX(3);
+const UMP_INNER_Y_PCT = pctY(5);
+const UMP_INNER_W_PCT = pctX(28);
+const UMP_INNER_H_PCT = pctY(26);
+const BENCH_GAP_PCT = pctY(14);
+const BENCH_W_PCT = pctX(25);
+const BENCH_H_PCT = pctY(44);
 
 function BenchFacingCourt({x, y, sl}) {
-    const w = 25;
-    const h = 44;
+    const w = courtX(BENCH_W_PCT);
+    const h = courtY(BENCH_H_PCT);
     return (
         <Group x={x} y={y}>
             <Rect width={w} height={h} fill={sl.benchSeat} cornerRadius={2}/>
             <Rect
-                x={w - 6}
-                y={2}
-                width={4}
-                height={h - 4}
+                x={w - courtX(pctX(6))}
+                y={courtY(pctY(2))}
+                width={courtX(pctX(4))}
+                height={h - courtY(pctY(4))}
                 fill={sl.benchLeg}
                 opacity={0.9}
                 cornerRadius={1}
             />
             {/* open / seat side toward court (+x) */}
             <Rect
-                x={w - 2}
-                y={4}
-                width={2}
-                height={h - 8}
+                x={w - courtX(pctX(2))}
+                y={courtY(pctY(4))}
+                width={courtX(pctX(2))}
+                height={h - courtY(pctY(8))}
                 fill={sl.towel}
                 opacity={0.55}
                 cornerRadius={1}
@@ -133,30 +156,30 @@ export default function TennisCourt({
     const sl = colors.sideLine;
 
     const OX = SIDE_PAD;
-    const doublesLeft = OX + 45;
+    const doublesLeft = OX + courtX(DOUBLES_LEFT_X_PCT);
     const courtLines = [
         //left singles line
-        [90, 45, 90, 825],
+        [courtX(SINGLES_LEFT_X_PCT), courtY(pctY(45)), courtX(SINGLES_LEFT_X_PCT), courtY(pctY(825))],
         //right singles line
-        [360, 45, 360, 825],
+        [courtX(SINGLES_RIGHT_X_PCT), courtY(pctY(45)), courtX(SINGLES_RIGHT_X_PCT), courtY(pctY(825))],
         //center service line
-        [225, 225, 225, 615],
+        [courtX(pctX(225)), courtY(pctY(225)), courtX(pctX(225)), courtY(pctY(615))],
         //far center baseline little line
-        [225, 45, 225, 53],
+        [courtX(pctX(225)), courtY(pctY(45)), courtX(pctX(225)), courtY(pctY(53))],
         //near center baseline little line
-        [225, 817, 225, 825],
+        [courtX(pctX(225)), courtY(pctY(817)), courtX(pctX(225)), courtY(pctY(825))],
         //left doubles line
-        [45, 45, 45, 825],
+        [courtX(DOUBLES_LEFT_X_PCT), courtY(pctY(45)), courtX(DOUBLES_LEFT_X_PCT), courtY(pctY(825))],
         //right doubles line
-        [405, 45, 405, 825],
+        [courtX(DOUBLES_RIGHT_X_PCT), courtY(pctY(45)), courtX(DOUBLES_RIGHT_X_PCT), courtY(pctY(825))],
         //Far baseline
-        [45, 45, 405, 45],
+        [courtX(DOUBLES_LEFT_X_PCT), courtY(pctY(45)), courtX(DOUBLES_RIGHT_X_PCT), courtY(pctY(45))],
         //Near baseline
-        [45, 825, 405, 825],
+        [courtX(DOUBLES_LEFT_X_PCT), courtY(pctY(825)), courtX(DOUBLES_RIGHT_X_PCT), courtY(pctY(825))],
         //Near Service line
-        [90, 615, 360, 615],
+        [courtX(SINGLES_LEFT_X_PCT), courtY(pctY(615)), courtX(SINGLES_RIGHT_X_PCT), courtY(pctY(615))],
         //Far Service line
-        [90, 225, 360, 225],
+        [courtX(SINGLES_LEFT_X_PCT), courtY(pctY(225)), courtX(SINGLES_RIGHT_X_PCT), courtY(pctY(225))],
     ];
 
     if (!mounted) {
@@ -170,15 +193,15 @@ export default function TennisCourt({
     }
 
     /* Left post center (world): (doublesLeft, NET_Y). Gap before umpire. */
-    const postLeftTangent = doublesLeft - POST_R;
-    const umpireW = 34;
-    const umpireH = 37;
-    const umpireRight = postLeftTangent - POST_GAP;
+    const postLeftTangent = doublesLeft - courtX(POST_R_PCT);
+    const umpireW = courtX(UMP_W_PCT);
+    const umpireH = courtY(UMP_H_PCT);
+    const umpireRight = postLeftTangent - courtX(POST_GAP_PCT);
     const umpireX = umpireRight - umpireW;
-    const umpireY = NET_Y - umpireH / 2;
+    const umpireY = courtY(NET_Y_PCT) - umpireH / 2;
 
-    const benchGap = 14;
-    const benchH = 44;
+    const benchGap = courtY(BENCH_GAP_PCT);
+    const benchH = courtY(BENCH_H_PCT);
     const farBenchY = umpireY - benchGap - benchH;
     const nearBenchY = umpireY + umpireH + benchGap;
     const benchX = umpireX;
@@ -190,7 +213,13 @@ export default function TennisCourt({
 
                 <Group x={SIDE_PAD}>
                     <Rect x={0} y={0} width={COURT_W} height={COURT_H} fill={colors.outArea}/>
-                    <Rect x={45} y={45} width={360} height={780} fill={colors.court}/>
+                    <Rect
+                        x={courtX(COURT_INNER_X_PCT)}
+                        y={courtY(COURT_INNER_Y_PCT)}
+                        width={courtX(COURT_INNER_W_PCT)}
+                        height={courtY(COURT_INNER_H_PCT)}
+                        fill={colors.court}
+                    />
 
                     {/*Various out lines*/}
                     {courtLines.map((points, i) => (
@@ -199,15 +228,30 @@ export default function TennisCourt({
 
                     {/*Net*/}
                     <Line
-                        points={[45, 435, 405, 435]}
+                        points={[
+                            courtX(DOUBLES_LEFT_X_PCT),
+                            courtY(NET_Y_PCT),
+                            courtX(DOUBLES_RIGHT_X_PCT),
+                            courtY(NET_Y_PCT),
+                        ]}
                         stroke={colors.lines}
                         strokeWidth={2}
                         dash={[8, 3]}
                     />
                     {/*Left post*/}
-                    <Circle x={45} y={435} radius={POST_R} fill={colors.posts}/>
+                    <Circle
+                        x={courtX(DOUBLES_LEFT_X_PCT)}
+                        y={courtY(NET_Y_PCT)}
+                        radius={courtX(POST_R_PCT)}
+                        fill={colors.posts}
+                    />
                     {/*Right Post*/}
-                    <Circle x={405} y={435} radius={POST_R} fill={colors.posts}/>
+                    <Circle
+                        x={courtX(DOUBLES_RIGHT_X_PCT)}
+                        y={courtY(NET_Y_PCT)}
+                        radius={courtX(POST_R_PCT)}
+                        fill={colors.posts}
+                    />
                 </Group>
 
                 <Group>
@@ -224,10 +268,10 @@ export default function TennisCourt({
                             cornerRadius={3}
                         />
                         <Rect
-                            x={3}
-                            y={5}
-                            width={28}
-                            height={26}
+                            x={courtX(UMP_INNER_X_PCT)}
+                            y={courtY(UMP_INNER_Y_PCT)}
+                            width={courtX(UMP_INNER_W_PCT)}
+                            height={courtY(UMP_INNER_H_PCT)}
                             fill={sl.umpireAccent}
                             cornerRadius={2}
                         />
