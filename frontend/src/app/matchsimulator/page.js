@@ -1,9 +1,33 @@
 "use client";
 import Header from "../components/header";
 import TennisCourt from "../components/TennisCourt";
-import {useState, useEffect} from "react";
+import {useState, useEffect, useMemo} from "react";
 import OnePlayerBox from "../components/onePlayerBox";
 import TwoPlayerBox from "../components/TwoPlayerBox";
+
+import {
+    Combobox,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList
+} from "../../components/ui/combobox";
+
+/** Label: "Tournament Round vs. opponent" (matches `matches` table from loadData.py). */
+function formatMatchDisplay(match, viewerName) {
+    const tournament =
+        (match.tournament && String(match.tournament).trim()) || "Unknown tournament";
+    const round = (match.round && String(match.round).trim()) || "";
+    const p1 = match.player1;
+    const p2 = match.player2;
+    let opponent = null;
+    if (p1 === viewerName) opponent = p2;
+    else if (p2 === viewerName) opponent = p1;
+    else opponent = p1 || p2;
+    const head = [tournament, round].filter(Boolean).join(" ");
+    return `${head} vs. ${opponent ?? "Unknown"}`;
+}
 
 export default function MatchSimulatorPage() {
     const [players, setPlayers] = useState([]);
@@ -21,6 +45,9 @@ export default function MatchSimulatorPage() {
     const [selectedSurfaceTwo, setSelectedSurfaceTwo] = useState(null);
     const [selectedNameOne, setSelectedNameOne] = useState("");
     const [selectedNameTwo, setSelectedNameTwo] = useState("");
+    const [selectedMatchOne, setSelectedMatchOne] = useState([]);
+    const [selectedMatchTwo, setSelectedMatchTwo] = useState([]);
+    const [selectedOnePlayerMatch, setSelectedOnePlayerMatch] = useState(null);
 
     //Getting all players
     useEffect(() => {
@@ -67,54 +94,104 @@ export default function MatchSimulatorPage() {
         };
     }, [tennisCourt]);
 
+    useEffect(() => {
+        setSelectedOnePlayerMatch(null);
+    }, [selectedMatchOne]);
+
+    const onePlayerMatchOptions = useMemo(() => {
+        if (!Array.isArray(selectedMatchOne)) return [];
+        return selectedMatchOne.map((m) => ({
+            label: formatMatchDisplay(m, selectedNameOne),
+            value: String(m.match_id),
+        }));
+    }, [selectedMatchOne, selectedNameOne]);
+
+    const fetchPlayerMatches = async (playerName, surface, matchNum) => {
+        const encName = encodeURIComponent(playerName);
+        const qs =
+            surface != null && surface !== ""
+                ? `?surface=${encodeURIComponent(surface)}`
+                : "";
+        const res = await fetch(
+            `http://localhost:8000/getPlayerMatches/${encName}${qs}`
+        );
+        const data = await res.json();
+        const matches = Array.isArray(data?.matches) ? data.matches : [];
+
+        if (matchNum === "One") {
+            setSelectedMatchOne(matches);
+        } else if (matchNum === "Two") {
+            setSelectedMatchTwo(matches);
+        }
+    };
+
     return (
         <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
             <Header/>
             <main className="flex flex-1 flex-col items-center px-4 py-8 sm:px-6 sm:py-10">
                 <div
                     className={`relative w-full flex-col min-h-[180px] gap-5 rounded-2xl border border-zinc-200/90 flex justify-center items-center bg-white p-4 shadow-sm sm:p-6 ${
-                        twoPlayers && tennisCourt ? "max-w-[1180px]" : "max-w-[520px]"
+                        twoPlayers && tennisCourt
+                            ? "max-w-[1180px]"
+                            : onePlayer && tennisCourt
+                              ? "max-w-[640px]"
+                              : "max-w-[520px]"
                     }`}>
                     {clicked && (
                         //Button to go back from selecting players to selecting whether to view one player or two players*
                         <button
                             type="button"
-                            aria-label="Go back"
+                            aria-label={
+                                tennisCourt ? "Back to player selection" : "Back to main menu"
+                            }
                             className="absolute left-4 top-3 flex h-4 w-6 items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
                             onClick={() => {
-                                setClicked(false)
-                                setOnePlayer(false)
-                                setTwoPlayers(false)
-                                setTennisCourt(false)
-                                setPlayerOne(null)
-                                setPlayerTwo(null)
-                                setQueryOne("")
-                                setQueryTwo("")
-                                setSelectedSurfaceOne(null)
-                                setSelectedSurfaceTwo(null)
-                                setSelectedNameOne("")
-                                setSelectedNameTwo("")
+                                if (tennisCourt) {
+                                    setTennisCourt(false);
+                                    setSelectedOnePlayerMatch(null);
+                                    return;
+                                }
+                                setClicked(false);
+                                setOnePlayer(false);
+                                setTwoPlayers(false);
+                                setTennisCourt(false);
+                                setPlayerOne(null);
+                                setPlayerTwo(null);
+                                setQueryOne("");
+                                setQueryTwo("");
+                                setSelectedSurfaceOne(null);
+                                setSelectedSurfaceTwo(null);
+                                setSelectedNameOne("");
+                                setSelectedNameTwo("");
+                                setSelectedMatchOne([]);
+                                setSelectedMatchTwo([]);
+                                setSelectedOnePlayerMatch(null);
                             }}>
                             <span className="text-sm leading-none">←</span>
                         </button>
                     )}
                     {!clicked && (
-                        <div className={"flex gap-3"}>
-                            <button
-                                onClick={() => {
-                                    setOnePlayer(true)
+                        <div className="flex w-full flex-col items-center justify-center gap-5">
+                            <h2 className="text-center text-xl font-semibold tracking-tight text-zinc-900">
+                                Match simulator
+                            </h2>
+                            <div className="flex flex-wrap justify-center gap-3">
+                                <button
+                                    onClick={() => {
+                                        setOnePlayer(true)
+                                        setClicked(true)
+                                    }}
+                                    className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                    View One Player
+                                </button>
+                                <button onClick={() => {
+                                    setTwoPlayers(true)
                                     setClicked(true)
                                 }}
-                                className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
-                                View One Player
-                            </button>
-                            <button onClick={() => {
-                                setTwoPlayers(true)
-                                setClicked(true)
-                            }}
-                                    className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
-                                Compare Players
-                            </button>
+                                        className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                    Compare Players
+                                </button>
+                            </div>
                         </div>
                     )}
                     {/*When two players are viewed*/}
@@ -131,11 +208,13 @@ export default function MatchSimulatorPage() {
                             setQueryOne={setQueryOne}
                             surfaces={surfaces}
                             playersLoading={playersLoading}
-                            onView={({ playerOne, playerTwo, surfaceOne, surfaceTwo }) => {
+                            onView={({playerOne, playerTwo, surfaceOne, surfaceTwo}) => {
                                 setSelectedNameOne(playerOne);
                                 setSelectedNameTwo(playerTwo);
                                 setSelectedSurfaceOne(surfaceOne);
                                 setSelectedSurfaceTwo(surfaceTwo);
+                                fetchPlayerMatches(playerOne, surfaceOne, "One");
+                                fetchPlayerMatches(playerTwo, surfaceTwo, "Two");
                                 setTennisCourt(true);
                             }}
                         />
@@ -143,13 +222,15 @@ export default function MatchSimulatorPage() {
 
                     {(twoPlayers && tennisCourt) && (
                         <div className="pt-6 grid w-full gap-5 md:grid-cols-2">
-                            <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <div
+                                className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameOne}
                                 </h3>
                                 <TennisCourt surface={selectedSurfaceOne} courtScale={0.62}/>
                             </div>
-                            <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <div
+                                className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameTwo}
                                 </h3>
@@ -157,6 +238,7 @@ export default function MatchSimulatorPage() {
                             </div>
                         </div>
                     )}
+
                     {/*When only one player is viewed*/}
                     {onePlayer && !tennisCourt && (
                         <OnePlayerBox
@@ -170,13 +252,37 @@ export default function MatchSimulatorPage() {
                             onView={(surface) => {
                                 setSelectedNameOne(playerOne);
                                 setSelectedSurfaceOne(surface);
+                                fetchPlayerMatches(playerOne, surface, "One");
                                 setTennisCourt(true)
                             }}
                         />
                     )}
                     {onePlayer && tennisCourt && (
-                        <div className="pt-10 w-full max-w-[560px]">
-                            <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                        <div className="flex w-full max-w-[600px] flex-col gap-3 pt-10 pb-10">
+                            <Combobox
+                                key={`${selectedNameOne}-${selectedSurfaceOne}`}
+                                items={onePlayerMatchOptions}
+                                value={selectedOnePlayerMatch}
+                                onValueChange={setSelectedOnePlayerMatch}>
+                                <ComboboxInput
+                                    placeholder="Select a match"
+                                    className="w-full min-w-0"
+                                />
+                                <ComboboxContent>
+                                    <ComboboxEmpty>
+                                        No matches found on this surface
+                                    </ComboboxEmpty>
+                                    <ComboboxList>
+                                        {(item) => (
+                                            <ComboboxItem key={item.value} value={item}>
+                                                {item.label}
+                                            </ComboboxItem>
+                                        )}
+                                    </ComboboxList>
+                                </ComboboxContent>
+                            </Combobox>
+                            <div
+                                className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameOne}
                                 </h3>
@@ -184,8 +290,6 @@ export default function MatchSimulatorPage() {
                             </div>
                         </div>
                     )}
-
-
                 </div>
             </main>
         </div>

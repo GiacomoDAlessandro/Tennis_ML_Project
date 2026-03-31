@@ -1,6 +1,8 @@
+from typing import Optional
+
 from db import supabase
 from PointsParse import parse_shot_sequence, SERVE_DIRECTIONS, SHOT_TYPES, OUTCOMES
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -40,4 +42,27 @@ def get_players():
         page += 1
     return {"players": sorted(list(players))}
 
-#TODO: get for getting a certain player's matches/shots all on a specific surface
+def _normalize_surface(surface: str) -> str:
+    s = surface.strip().lower()
+    if not s:
+        return ""
+    return s[0].upper() + s[1:] if len(s) > 1 else s.upper()
+
+
+@app.get("/getPlayerMatches/{player_name}")
+def get_player_matches(
+    player_name: str,
+    surface: Optional[str] = Query(None),
+):
+    """Matches rows match loadData.py: player1, player2, tournament, round, surface (Hard/Clay/Grass)."""
+    query = (
+        supabase.table("matches")
+        .select("match_id, player1, player2, tournament, round, surface")
+        .or_(f"player1.eq.{player_name}, player2.eq.{player_name}")
+    )
+
+    if surface:
+        query = query.eq("surface", _normalize_surface(surface))
+
+    result = query.execute()
+    return {"matches": result.data or []}
