@@ -49,6 +49,24 @@ export default function MatchSimulatorPage() {
             .finally(() => setPlayersLoading(false));
     }, []);
 
+    useEffect(() => {
+        const prevBodyOverflow = document.body.style.overflow;
+        const prevHtmlOverflow = document.documentElement.style.overflow;
+
+        if (tennisCourt) {
+            document.body.style.overflow = "auto";
+            document.documentElement.style.overflow = "auto";
+        } else {
+            document.body.style.overflow = "hidden";
+            document.documentElement.style.overflow = "hidden";
+        }
+
+        return () => {
+            document.body.style.overflow = prevBodyOverflow;
+            document.documentElement.style.overflow = prevHtmlOverflow;
+        };
+    }, [tennisCourt]);
+
     return (
         <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
             <Header/>
@@ -124,7 +142,7 @@ export default function MatchSimulatorPage() {
                     )}
 
                     {(twoPlayers && tennisCourt) && (
-                        <div className="grid w-full gap-5 md:grid-cols-2">
+                        <div className="pt-6 grid w-full gap-5 md:grid-cols-2">
                             <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameOne}
