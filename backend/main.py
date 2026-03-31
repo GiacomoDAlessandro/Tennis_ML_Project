@@ -37,7 +37,7 @@ def get_players():
                 players.add(match['player2'])
         if len(result.data) < page_size:
             break
-
         page += 1
-
     return {"players": sorted(list(players))}
+
+#TODO: get for getting a certain player's matches/shots all on a specific surface

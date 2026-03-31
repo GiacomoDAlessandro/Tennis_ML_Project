@@ -1,7 +1,9 @@
 "use client";
-import Header from "../components/header.jsx";
-import TennisCourt from "../components/TennisCourt.jsx";
+import Header from "../components/header";
+import TennisCourt from "../components/TennisCourt";
 import {useState, useEffect, useMemo} from "react";
+import OnePlayerBox from "../components/onePlayerBox";
+import TwoPlayerBox from "../components/TwoPlayerBox";
 
 import {
     Combobox,
@@ -22,29 +24,18 @@ export default function MatchSimulatorPage() {
     const [clicked, setClicked] = useState(false);
     const [onePlayer, setOnePlayer] = useState(false);
     const [twoPlayers, setTwoPlayers] = useState(false);
+    const [tennisCourt, setTennisCourt] = useState(false);
+    const [chooseSurface, setChooseSurface] = useState(false);
+    const surfaces = ["clay", "hard", "grass"];
+    const [selectedSurface, setSelectedSurface] = useState(null)
 
+    //Getting all players
     useEffect(() => {
         fetch("http://localhost:8000/getAllPlayers")
             .then((res) => res.json())
             .then((data) => setPlayers(data.players ?? []))
             .catch(() => setPlayers([]));
     }, []);
-
-    const filterByPrefix = (list, query) => {
-        const q = query.trim().toLowerCase();
-        if (!q) return list;
-        return list.filter((name) => String(name).toLowerCase().startsWith(q));
-    };
-
-    const playerOneOptions = useMemo(
-        () => filterByPrefix(players, queryOne),
-        [players, queryOne]
-    );
-
-    const playerTwoOptions = useMemo(
-        () => filterByPrefix(players, queryTwo),
-        [players, queryTwo]
-    );
 
     return (
         <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
@@ -53,12 +44,19 @@ export default function MatchSimulatorPage() {
                 <div
                     className=" relative w-full flex-col min-h-[180px] gap-5 max-w-[520px] rounded-2xl border border-zinc-200/90 flex justify-center items-center bg-white p-4 shadow-sm sm:p-6">
                     {clicked && (
-                        <button className={"top-2 left-4 absolute text-sm text-zinc-500 hover:text-zinc-900 font-semibold"}
-                                onClick={() => {
-                                    setClicked(false)
-                                    setOnePlayer(false)
-                                    setTwoPlayers(false)
-                                }}>
+                        //Button to go back from selecting players to selecting whether to view one player or two players*
+                        <button
+                            className={"top-2 left-4 absolute text-sm text-zinc-500 hover:text-zinc-900 font-semibold"}
+                            onClick={() => {
+                                setClicked(false)
+                                setOnePlayer(false)
+                                setTwoPlayers(false)
+                                setTennisCourt(false)
+                                setPlayerOne(null)
+                                setPlayerTwo(null)
+                                setQueryOne("")
+                                setQueryTwo("")
+                            }}>
                             ←
                         </button>
                     )}
@@ -69,82 +67,57 @@ export default function MatchSimulatorPage() {
                                     setOnePlayer(true)
                                     setClicked(true)
                                 }}
-                                className="flex h-11 w-50 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
                                 View One Player
                             </button>
                             <button onClick={() => {
                                 setTwoPlayers(true)
                                 setClicked(true)
                             }}
-                                    className="flex h-11 w-50 items-center justify-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
+                                    className="flex h-11 w-50 justify-center items-center rounded-lg bg-zinc-900 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800">
                                 Compare Players
                             </button>
                         </div>
                     )}
+                    {/*When two players are viewed*/}
                     {twoPlayers && (
-                        <div className={"flex flex-col w-full pt-6 gap-3"}>
-                            <Combobox
-                                items={playerOneOptions}
-                                value={playerOne}
-                                onValueChange={setPlayerOne}
-                                onInputValueChange={setQueryOne}
-                            >
-                                <ComboboxInput placeholder="Select Player One"/>
-                                <ComboboxContent>
-                                    <ComboboxList>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item}>
-                                                {item}
-                                            </ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                    <ComboboxEmpty>No players found</ComboboxEmpty>
-                                </ComboboxContent>
-                            </Combobox>
-                            <Combobox
-                                items={playerTwoOptions}
-                                value={playerTwo}
-                                onValueChange={setPlayerTwo}
-                                onInputValueChange={setQueryTwo}
-                            >
-                                <ComboboxInput placeholder="Select Player Two"/>
-                                <ComboboxContent>
-                                    <ComboboxList>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item}>
-                                                {item}
-                                            </ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                    <ComboboxEmpty>No players found</ComboboxEmpty>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
+                        <TwoPlayerBox
+                            players={players}
+                            playerOne={playerOne}
+                            playerTwo={playerTwo}
+                            setPlayerTwo={setPlayerTwo}
+                            setPlayerOne={setPlayerOne}
+                            queryTwo={queryTwo}
+                            setQueryTwo={setQueryTwo}
+                            queryOne={queryOne}
+                            setQueryOne={setQueryOne}
+                            surfaces={surfaces}
+                            setTennisCourt={setTennisCourt}
+                        />
                     )}
+                    {/*When only one player is viewed*/}
                     {onePlayer && (
-                        <Combobox
-                            items={playerTwoOptions}
-                            value={playerTwo}
-                            onValueChange={setPlayerTwo}
-                            onInputValueChange={setQueryTwo}
-                        >
-                            <ComboboxInput placeholder="Select Player Two"/>
-                            <ComboboxContent>
-                                <ComboboxList>
-                                    {(item) => (
-                                        <ComboboxItem key={item} value={item}>
-                                            {item}
-                                        </ComboboxItem>
-                                    )}
-                                </ComboboxList>
-                                <ComboboxEmpty>No players found</ComboboxEmpty>
-                            </ComboboxContent>
-                        </Combobox>
+                        <OnePlayerBox
+                            players={players}
+                            playerOne={playerOne}
+                            setPlayerOne={setPlayerOne}
+                            queryOne={queryOne}
+                            setQueryOne={setQueryOne}
+                            surfaces={surfaces}
+                            onView={(surface) => {
+                                setSelectedSurface(surface);
+                                setTennisCourt(true)
+                            }}
+                        />
                     )}
-                    {/*<TennisCourt surface="clay" fitViewport/>*/}
+
+                    {tennisCourt && (
+                        <TennisCourt surface={selectedSurface}/>
+                    )}
+
+
                 </div>
             </main>
         </div>
     )
-        ;
 }
