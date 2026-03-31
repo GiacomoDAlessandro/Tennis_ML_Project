@@ -10,6 +10,10 @@ const SIDE_PAD = 70;
 const RIGHT_OUT = 50;
 const STAGE_W = SIDE_PAD + COURT_W + RIGHT_OUT;
 const STAGE_H = COURT_H;
+const GRASS_STRIPE_COUNT = 14;
+const GRASS_STRIPE_W = COURT_W / GRASS_STRIPE_COUNT;
+/** Single opacity for all mowing stripes (one layer — avoids stronger look inside vs outside) */
+const GRASS_STRIPE_OPACITY = 0.22;
 
 const pctX = (value) => (value / COURT_W) * 100;
 const pctY = (value) => (value / COURT_H) * 100;
@@ -70,11 +74,11 @@ function BenchFacingCourt({x, y, sl}) {
 }
 
 export default function TennisCourt({
-    surface = "hard",
-    scale = 1,
-    courtScale = 1,
-    fitViewport = false,
-}) {
+                                        surface = "hard",
+                                        scale = 1,
+                                        courtScale = 1,
+                                        fitViewport = false,
+                                    }) {
     const [mounted, setMounted] = useState(false);
     const [fitScale, setFitScale] = useState(0.72);
 
@@ -211,6 +215,22 @@ export default function TennisCourt({
         <Stage width={STAGE_W * s} height={STAGE_H * s}>
             <Layer scaleX={s} scaleY={s}>
                 <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={colors.outArea}/>
+                {surface.toLowerCase() === "grass" &&
+                    Array.from({length: Math.ceil(STAGE_W / GRASS_STRIPE_W)}).map((_, i) => {
+                        const stripeX = i * GRASS_STRIPE_W;
+                        const stripeW = Math.min(GRASS_STRIPE_W, STAGE_W - stripeX);
+                        return (
+                            <Rect
+                                key={`grass-strip-${i}`}
+                                x={stripeX}
+                                y={0}
+                                width={stripeW}
+                                height={STAGE_H}
+                                fill={i % 2 === 0 ? "#5f934f" : "#3f6f36"}
+                                opacity={GRASS_STRIPE_OPACITY}
+                            />
+                        );
+                    })}
 
                 <Group x={SIDE_PAD}>
                     <Rect x={0} y={0} width={COURT_W} height={COURT_H} fill={colors.outArea}/>
@@ -221,6 +241,20 @@ export default function TennisCourt({
                         height={courtY(COURT_INNER_H_PCT)}
                         fill={colors.court}
                     />
+                    {surface.toLowerCase() === "grass" &&
+                        Array.from({length: GRASS_STRIPE_COUNT}).map((_, i) => {
+                            return (
+                                <Rect
+                                    key={`grass-court-strip-${i}`}
+                                    x={i * GRASS_STRIPE_W}
+                                    y={0}
+                                    width={GRASS_STRIPE_W}
+                                    height={COURT_H}
+                                    fill={i % 2 === 0 ? "#5f934f" : "#3f6f36"}
+                                    opacity={0.4}
+                                />
+                            );
+                        })}
 
                     {/*Various out lines*/}
                     {courtLines.map((points, i) => (
