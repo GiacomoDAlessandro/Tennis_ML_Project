@@ -16,11 +16,11 @@ export default function TwoPlayerBox({
                                          queryOne,
                                          setQueryOne,
                                          surfaces,
-                                         setTennisCourt,
                                          playerTwo,
                                          setPlayerTwo,
                                          queryTwo,
                                          setQueryTwo,
+                                         playersLoading = false,
                                          onView
                                      }) {
 
@@ -49,17 +49,25 @@ export default function TwoPlayerBox({
     );
 
     const handleView = () => {
-        if (!playerOne || playerTwo || !surfaceOne || !surfaceTwo) {
+        if (!playerOne || !playerTwo || !surfaceOne || !surfaceTwo) {
             setWarningOpen(true);
             return;
         }
         setWarningOpen(false);
-        onView?.(surface);
+        onView?.({
+            playerOne,
+            playerTwo,
+            surfaceOne,
+            surfaceTwo,
+        });
     };
 
 
     return (
         <div className={"flex flex-col w-4/5 pt-6 gap-3"}>
+            <header className={"font-semibold flex justify-center"}>
+                Pick Two Players To Compare
+            </header>
             <div className={"flex gap-3 w-full"}>
                 {/*Player One*/}
                 <Combobox
@@ -68,7 +76,10 @@ export default function TwoPlayerBox({
                     onValueChange={setPlayerOne}
                     onInputValueChange={setQueryOne}
                 >
-                    <ComboboxInput placeholder="Select Player One"/>
+                    <ComboboxInput
+                        placeholder={playersLoading ? "Loading players..." : "Select Player One"}
+                        disabled={playersLoading}
+                    />
                     <ComboboxContent>
                         <ComboboxList>
                             {(item) => (
@@ -77,7 +88,9 @@ export default function TwoPlayerBox({
                                 </ComboboxItem>
                             )}
                         </ComboboxList>
-                        <ComboboxEmpty>No players found</ComboboxEmpty>
+                        <ComboboxEmpty>
+                            {playersLoading ? "Loading players..." : "No players found"}
+                        </ComboboxEmpty>
                     </ComboboxContent>
                 </Combobox>
 
@@ -109,7 +122,10 @@ export default function TwoPlayerBox({
                         onValueChange={setPlayerTwo}
                         onInputValueChange={setQueryTwo}
                     >
-                        <ComboboxInput placeholder="Select Player Two"/>
+                        <ComboboxInput
+                            placeholder={playersLoading ? "Loading players..." : "Select Player Two"}
+                            disabled={playersLoading}
+                        />
                         <ComboboxContent>
                             <ComboboxList>
                                 {(item) => (
@@ -118,7 +134,9 @@ export default function TwoPlayerBox({
                                     </ComboboxItem>
                                 )}
                             </ComboboxList>
-                            <ComboboxEmpty>No players found</ComboboxEmpty>
+                            <ComboboxEmpty>
+                                {playersLoading ? "Loading players..." : "No players found"}
+                            </ComboboxEmpty>
                         </ComboboxContent>
                     </Combobox>
 

@@ -72,6 +72,7 @@ function BenchFacingCourt({x, y, sl}) {
 export default function TennisCourt({
     surface = "hard",
     scale = 1,
+    courtScale = 1,
     fitViewport = false,
 }) {
     const [mounted, setMounted] = useState(false);
@@ -107,7 +108,7 @@ export default function TennisCourt({
         };
     }, [mounted, fitViewport]);
 
-    const rawS = fitViewport ? fitScale : scale;
+    const rawS = fitViewport ? fitScale : scale * courtScale;
     const s = Math.min(Math.max(rawS, 0.2), 2);
 
     const courtColors = {

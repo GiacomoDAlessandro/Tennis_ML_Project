@@ -16,6 +16,7 @@ export default function OnePlayerBox({
                                          queryOne,
                                          setQueryOne,
                                          surfaces,
+                                         playersLoading = false,
                                          onView,
                                      }) {
 
@@ -48,13 +49,19 @@ export default function OnePlayerBox({
 
     return (
         <div className={"flex flex-col gap-3 w-3/5 pt-6"}>
+            <header className={"font-semibold justify-center flex"}>
+                Choose A Player To View
+            </header>
             <Combobox
                 items={playerOneOptions}
                 value={playerOne}
                 onValueChange={setPlayerOne}
                 onInputValueChange={setQueryOne}>
 
-                <ComboboxInput placeholder="Select Player"/>
+                <ComboboxInput
+                    placeholder={playersLoading ? "Loading players..." : "Select Player"}
+                    disabled={playersLoading}
+                />
                 <ComboboxContent>
                     <ComboboxList>
                         {(item) => (
@@ -63,7 +70,9 @@ export default function OnePlayerBox({
                             </ComboboxItem>
                         )}
                     </ComboboxList>
-                    <ComboboxEmpty>No players found</ComboboxEmpty>
+                    <ComboboxEmpty>
+                        {playersLoading ? "Loading players..." : "No players found"}
+                    </ComboboxEmpty>
                 </ComboboxContent>
             </Combobox>
             {/*Surface*/}
