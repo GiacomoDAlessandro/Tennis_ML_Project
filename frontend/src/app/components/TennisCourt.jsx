@@ -1,5 +1,5 @@
 "use client";
-
+import { COURT_W, COURT_H, SIDE_PAD } from "../lib/courtConstants";
 import React, {useEffect, useState} from "react";
 import {Line, Rect, Stage, Layer, Circle, Group} from "react-konva";
 
