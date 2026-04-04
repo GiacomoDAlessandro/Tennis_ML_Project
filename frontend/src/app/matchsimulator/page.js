@@ -5,6 +5,7 @@ import {useState, useEffect, useMemo} from "react";
 import OnePlayerBox from "../components/onePlayerBox";
 import TwoPlayerBox from "../components/TwoPlayerBox";
 
+
 import {
     Combobox,
     ComboboxContent,
@@ -48,6 +49,24 @@ export default function MatchSimulatorPage() {
     const [selectedMatchOne, setSelectedMatchOne] = useState([]);
     const [selectedMatchTwo, setSelectedMatchTwo] = useState([]);
     const [selectedOnePlayerMatch, setSelectedOnePlayerMatch] = useState(null);
+
+
+    useEffect(() => {
+        const saved = sessionStorage.getItem("devState");
+        if (saved) {
+            const s = JSON.parse(saved);
+            setClicked(s.clicked);
+            setOnePlayer(s.onePlayer);
+            setTennisCourt(s.tennisCourt);
+            setSelectedNameOne(s.selectedNameOne);
+            setSelectedSurfaceOne(s.selectedSurfaceOne);
+
+            if (s.selectedNameOne) {
+                fetchPlayerMatches(s.selectedNameOne, s.selectedSurfaceOne, "One");
+            }
+
+        }
+    }, []);
 
     //Getting all players
     useEffect(() => {
@@ -98,6 +117,7 @@ export default function MatchSimulatorPage() {
         setSelectedOnePlayerMatch(null);
     }, [selectedMatchOne]);
 
+
     const onePlayerMatchOptions = useMemo(() => {
         if (!Array.isArray(selectedMatchOne)) return [];
         return selectedMatchOne.map((m) => ({
@@ -106,6 +126,8 @@ export default function MatchSimulatorPage() {
         }));
     }, [selectedMatchOne, selectedNameOne]);
 
+
+    //Getting matches from supabase
     const fetchPlayerMatches = async (playerName, surface, matchNum) => {
         const encName = encodeURIComponent(playerName);
         const qs =
@@ -116,8 +138,11 @@ export default function MatchSimulatorPage() {
             `http://localhost:8000/getPlayerMatches/${encName}${qs}`
         );
         const data = await res.json();
+
+        //matches
         const matches = Array.isArray(data?.matches) ? data.matches : [];
 
+        //Initially match selected is every match until user selects a specific match
         if (matchNum === "One") {
             setSelectedMatchOne(matches);
         } else if (matchNum === "Two") {
@@ -134,8 +159,8 @@ export default function MatchSimulatorPage() {
                         twoPlayers && tennisCourt
                             ? "max-w-[1180px]"
                             : onePlayer && tennisCourt
-                              ? "max-w-[640px]"
-                              : "max-w-[520px]"
+                                ? "max-w-[640px]"
+                                : "max-w-[520px]"
                     }`}>
                     {clicked && (
                         //Button to go back from selecting players to selecting whether to view one player or two players*
@@ -254,6 +279,13 @@ export default function MatchSimulatorPage() {
                                 setSelectedSurfaceOne(surface);
                                 fetchPlayerMatches(playerOne, surface, "One");
                                 setTennisCourt(true)
+                                sessionStorage.setItem("devState", JSON.stringify({
+                                    clicked: true,
+                                    onePlayer: true,
+                                    tennisCourt: true,
+                                    selectedNameOne: playerOne,
+                                    selectedSurfaceOne: surface,
+                                }));
                             }}
                         />
                     )}

@@ -2,10 +2,8 @@
 import { COURT_W, COURT_H, SIDE_PAD } from "../lib/courtConstants";
 import React, {useEffect, useState} from "react";
 import {Line, Rect, Stage, Layer, Circle, Group} from "react-konva";
+import ShotLayer from './ShotLayer'
 
-const COURT_W = 450;
-const COURT_H = 870;
-const SIDE_PAD = 70;
 /** Extra out area past the right outer boundary */
 const RIGHT_OUT = 50;
 const STAGE_W = SIDE_PAD + COURT_W + RIGHT_OUT;
@@ -313,6 +311,7 @@ export default function TennisCourt({
                     </Group>
                 </Group>
             </Layer>
+            <ShotLayer s={s}/>
         </Stage>
     );
 }

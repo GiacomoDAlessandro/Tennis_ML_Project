@@ -20,7 +20,7 @@ const SERVE_ZONES = {
     D: {
         wide: { x: 340, y: 330 },
         body: { x: 290, y: 330 },
-        T:    { x: 230, y: 330 },
+        T:    { x: 240, y: 330 },
     },
     A: {
         wide: { x: 95,  y: 330 },
