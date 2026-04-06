@@ -78,3 +78,9 @@ def get_match_points(match_id: str):
 
     result = query.execute()
     return {"points": result.data or []}
+
+@app.get("/getServePoints/{match_id}")
+def get_serve_points(match_id: str):
+    query = (
+        supabas.table("points")
+    )
