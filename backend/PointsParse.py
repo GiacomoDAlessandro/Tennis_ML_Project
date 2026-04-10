@@ -204,14 +204,17 @@ unforced        : Points LOST because this player made an unforced error
 """
 import pandas as pd
 
+
 class MockPoint:
     def __init__(self, first, second=None):
         self.first = first
         self.second = second
+
+
 SERVE_DIRECTIONS = {
     "4": "wide",
     "5": "body",
-    "6": "T"
+    "6": "T",
 }
 
 SHOT_TYPES = {
@@ -241,24 +244,39 @@ DIRECTIONS = {
     "3": "Middle of court",
     "7": "Down the line(wide)",
     "8": "Crosscourt(wide)",
-    "9": "Middle(wide)"
+    "9": "Middle(wide)",
 }
 
 DEPTH = {
     "+": "Player approached net on shot"
 }
 
-OUTCOMES = {
+SERVE_OUTCOMES = {
     "*": "Ace",
-    "#": "Clean Winner",
+    "#": "Unreturnable",
+    "n": "Net error",
+    "d": "Deep error",
+    "w": "Wide error",
+    "x": "Wide and net error",
+    "!": "Shank",
+    "e": "Unknown fault",
+    "g": "General Error",
+}
+
+RALLY_OUTCOMES = {
+    "*": "Winner",
+    "#": "Forced error",
     "@": "Unforced error",
     "!": "Forced error",
     "n": "Net error",
     "d": "Deep error",
     "w": "Wide error",
     "x": "Wide and net error",
-    "g": "General Error"
+    "g": "General Error",
+    "!": "Shank",
 }
+
+OUTCOMES = RALLY_OUTCOMES
 
 OTHER_SYMBOLS = {
     "c": "Let serve",
@@ -268,7 +286,7 @@ OTHER_SYMBOLS = {
     "=": "Shot landed on the line",
     "Q": "Medical timeout called",
     "S": "Serve went in but rally not charted",
-    "R": "Return not charted"
+    "R": "Return not charted",
 }
 
 RETURN_DEPTH = {
@@ -286,6 +304,7 @@ def get_players_from_match_id(match_id: str) -> tuple:
             player1 = parts[i + 1]
             player2 = '_'.join(parts[i + 2:])
             return player1.replace('_', ' '), player2.replace('_', ' ')
+
 
 class Point:
     def __init__(self, row):
@@ -319,20 +338,20 @@ def parse_shot_sequence(curr_points: Point) -> list[dict]:
     else:
         sequence = curr_points.second
         miss = curr_points.first
-        fault_outcome = OUTCOMES.get(miss[1]) if len(miss) > 1 else None
+        fault_outcome = SERVE_OUTCOMES.get(miss[1]) if len(miss) > 1 else None
         current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[miss[0]], "outcomes": fault_outcome}
         shots.append(current_shot)
 
-    #Ace handling, if ace the data is simply (ex. 4*)
+    # Ace handling, if ace the data is simply (ex. 4*)
     if sequence[0] in SERVE_DIRECTIONS:
         current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[sequence[0]], "outcomes": None}
-        if len(sequence) > 1 and sequence[1] in OUTCOMES:
-            current_shot["outcomes"] = OUTCOMES[sequence[1]]
+        if len(sequence) > 1 and sequence[1] in SERVE_OUTCOMES:
+            current_shot["outcomes"] = SERVE_OUTCOMES[sequence[1]]
             shots.append(current_shot)
             current_shot = {}
-            sequence = sequence[2:]  #chop both serve direction and outcome
+            sequence = sequence[2:]  # chop both serve direction and outcome
         else:
-            sequence = sequence[1:]  #just chop serve direction
+            sequence = sequence[1:]  # just chop serve direction
 
     for char in sequence:
         if char in SHOT_TYPES:
@@ -341,8 +360,8 @@ def parse_shot_sequence(curr_points: Point) -> list[dict]:
             current_shot = {"type": SHOT_TYPES[char], "direction": None, "outcomes": None}
         elif char in DIRECTIONS:
             current_shot["direction"] = DIRECTIONS[char]
-        elif char in OUTCOMES:
-            current_shot["outcomes"] = OUTCOMES[char]
+        elif char in RALLY_OUTCOMES:
+            current_shot["outcomes"] = RALLY_OUTCOMES[char]
         elif char in OTHER_SYMBOLS:
             current_shot["other"] = OTHER_SYMBOLS[char]
 

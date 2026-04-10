@@ -2,7 +2,7 @@ import pandas as pd
 from db import supabase
 import math
 import time
-from PointsParse import SERVE_DIRECTIONS, SHOT_TYPES, OUTCOMES
+from PointsParse import SERVE_DIRECTIONS, SHOT_TYPES, OUTCOMES, SERVE_OUTCOMES, RALLY_OUTCOMES
 
 RETURN_DEPTHS = {
     "7": "short",
@@ -20,15 +20,18 @@ SHOT_DIRECTIONS_MAP = {
 BATCH_SIZE = 500
 MAX_RETRIES = 3
 
+
 def clean(val):
     if isinstance(val, float) and math.isnan(val):
         return None
     return val
 
+
 def clean_int(val):
     if isinstance(val, float) and math.isnan(val):
         return None
     return int(val)
+
 
 def extract_point_summary(first, second):
     try:
@@ -43,15 +46,14 @@ def extract_point_summary(first, second):
 
         serve_dir = SERVE_DIRECTIONS.get(sequence[0])
 
-        if len(sequence) > 1 and sequence[1] in OUTCOMES:
+        if len(sequence) > 1 and sequence[1] in SERVE_OUTCOMES:
 
-            serve_outcome = OUTCOMES[sequence[1]]
+            serve_outcome = SERVE_OUTCOMES[sequence[1]]
 
             rest = sequence[2:]
         else:
             serve_outcome = "in_play"
             rest = sequence[1:]
-
 
         return_type = None
         return_direction = None
@@ -69,7 +71,14 @@ def extract_point_summary(first, second):
                 if j < len(rest) and rest[j] in RETURN_DEPTHS:
                     return_depth = RETURN_DEPTHS[rest[j]]
                 break
-        point_end = next((OUTCOMES[c] for c in reversed(sequence) if c in OUTCOMES), None)
+        last_outcome_char = next((c for c in reversed(sequence) if c in RALLY_OUTCOMES or c in SERVE_OUTCOMES), None)
+        if last_outcome_char is None:
+            point_end = None
+        elif rest == "" or not any(c in SHOT_TYPES for c in rest):
+            # No rally shots — serve-only point
+            point_end = SERVE_OUTCOMES.get(last_outcome_char)
+        else:
+            point_end = RALLY_OUTCOMES.get(last_outcome_char)
 
         return serve_dir, serve_outcome, return_type, return_direction, return_depth, point_end, had_fault
 
@@ -97,10 +106,10 @@ def upsert_with_retry(table, batch, on_conflict=None):
 
 # ── DATA FILES ──────────────────────────────────────────────────────────────
 
-MATCHES_FILE = 'Data/charting-m-matches.csv'
+MATCHES_FILE = '../Data/charting-m-matches.csv'
 
 POINTS_FILES = [
-    'Data/charting-m-points-2020s.csv',
+    '../Data/charting-m-points-2020s.csv',
 ]
 
 matches_df = pd.read_csv(MATCHES_FILE)
@@ -108,8 +117,7 @@ matches_df = matches_df[matches_df['Surface'].isin(['Hard', 'Clay', 'Grass'])]
 valid_match_ids = set(matches_df['match_id'])
 
 # ── LOADING MATCHES ──────────────────────────────────────────────────────────
-
-
+"""
 winners_lookup = {}
 for file in POINTS_FILES:
     try:
@@ -139,9 +147,7 @@ for i in range(0, len(batch), BATCH_SIZE):
     print(f"{'✓' if success else '✗'} Matches: {min(i + BATCH_SIZE, len(batch))} / {len(batch)}")
 print("Matches done")
 
-
-
-
+"""
 # ── LOADING POINTS ───────────────────────────────────────────────────────────
 
 all_points = []
@@ -175,15 +181,15 @@ for idx, (_, row) in enumerate(points_df.iterrows()):
         'game2': clean_int(row['Gm2']),
         'winner': clean_int(row['PtWinner']),
         'server': clean_int(row['Svr']),
-        'first': clean(row['1st']),      # raw string — parsed on demand for visualization
-        'second': clean(row['2nd']),     # raw string — parsed on demand for visualization
-        'serve_direction': serve_dir,    # "wide" | "body" | "T"
+        'first': clean(row['1st']),  # raw string — parsed on demand for visualization
+        'second': clean(row['2nd']),  # raw string — parsed on demand for visualization
+        'serve_direction': serve_dir,  # "wide" | "body" | "T"
         'serve_outcome': serve_outcome,  # "Ace" | "in_play" | "Forced error" etc
-        'return_type': return_type,      # "forehand" | "backhand slice" etc
+        'return_type': return_type,  # "forehand" | "backhand slice" etc
         'return_direction': return_dir,  # "forehand side" | "middle" | "backhand side"
-        'return_depth': return_depth,    # "short" | "mid" | "deep"
-        'point_end': point_end,          # "Clean Winner" | "Unforced error" etc
-        'had_fault': had_fault           # True = second serve was used
+        'return_depth': return_depth,  # "short" | "mid" | "deep"
+        'point_end': point_end,  # "Clean Winner" | "Unforced error" etc
+        'had_fault': had_fault  # True = second serve was used
     })
 
     if len(batch) == BATCH_SIZE:
