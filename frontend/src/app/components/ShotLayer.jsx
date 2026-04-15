@@ -1,7 +1,7 @@
 import {COURT_W, COURT_H, SIDE_PAD} from "../lib/courtConstants";
 import {Layer, Circle} from "react-konva";
-import { useState, useEffect } from "react";
-import { getServeCoordinates } from "../lib/courtUtils";
+import {useState, useEffect} from "react";
+import {getServeCoordinates} from "../lib/courtUtils";
 
 
 export default function ShotLayer({s, matchId, playerName, surface}) {
@@ -12,27 +12,12 @@ export default function ShotLayer({s, matchId, playerName, surface}) {
         fetch(`http://localhost:8000/getPlayerServes/${matchId}/${playerName}`)
             .then((res) => res.json())
             .then((data) => {
-                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number, point.serve_outcome, surface))
+                setShots(data['points'].flatMap(point => getServeCoordinates(point.first_serve_direction, point.first_serve_outcome, point.second_serve_direction,
+                    point.second_serve_outcome, point.had_fault, point.point_number, surface))
                     .filter(shot => shot !== null)
                 );
             })
     }, [matchId, playerName]);
-
-    const testShots = [
-        {x: 340, y: 260},
-        {x: 290, y: 260},
-        {x: 240, y: 260},
-        {x: 105, y: 260},
-        {x: 160, y: 260},
-        {x: 210, y: 260},
-    ]
-
-    const serveOutcome = {
-        Ace: "blue",
-        in_play: "green"
-    }
-
-
 
     return (
         <Layer scaleX={s} scaleY={s}>

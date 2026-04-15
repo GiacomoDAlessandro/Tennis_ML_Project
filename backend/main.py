@@ -81,14 +81,10 @@ def get_match_points(match_id: str, player_name: str):
         ourPlayer = 2
     query = (
         supabase.table("points")
-        .select("point_number, server, serve_direction, serve_outcome, point_end, had_fault")
+        .select("point_number, server, first_serve_direction, first_serve_outcome, second_serve_direction, second_serve_outcome,"
+                " point_end, had_fault")
         .eq("match_id", match_id).eq("server", ourPlayer)
     )
 
     result = query.execute()
     return {"points": result.data or []}
-
-
-@app.get("/getPlayerReturns/{match_id}")
-def get_player_returns(match_id: str):
-    query = ()

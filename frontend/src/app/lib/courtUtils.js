@@ -1,9 +1,9 @@
 //These sides are where the server serves from
 function getAD_DEUCE(score) {
-    if (score % 2 !== 0) {
-        return "A";
-    } else {
+    if (score % 2 == 0) {
         return "D";
+    } else {
+        return "A";
     }
 }
 
@@ -22,15 +22,44 @@ const SERVE_ZONES = {
 
 const Serve_Errors = {
     D: {
-        "Net error": {x: 290, y: 0},
-        "Deep error": {x: 0, y: 0},
-        "Wide error": {x: 0, y: 0},
-        "Wide and net error": {x: 0, y: 0},
+        wide: {
+            "Net error": {x: 370, y: 440},
+            "Deep error": {x: 370, y: 195},
+            "Wide error": {x: 420, y: 280},
+            "Wide and net error": {x: 420, y: 155},
+        },
+        body: {
+            "Net error": {x: 290, y: 440},
+            "Deep error": {x: 290, y: 195},
+            "Wide error": {x: 390, y: 280},
+            "Wide and net error": {x: 390, y: 155},
+        },
+        T: {
+            "Net error": {x: 220, y: 440},
+            "Deep error": {x: 220, y: 195},
+            "Wide error": {x: 150, y: 280},
+            "Wide and net error": {x: 150, y: 155},
+        },
     },
     A: {
-        "Net error": {x: 0, y: 0},
-        "Deep error": {x: 0, y: 0},
-        "Wide error": {x: 0, y: 0},
+        wide: {
+            "Net error": {x: 60, y: 450},
+            "Deep error": {x: 60, y: 195},
+            "Wide error": {x: 20, y: 280},
+            "Wide and net error": {x: 20, y: 155},
+        },
+        body: {
+            "Net error": {x: 160, y: 450},
+            "Deep error": {x: 160, y: 195},
+            "Wide error": {x: 60, y: 280},
+            "Wide and net error": {x: 60, y: 155},
+        },
+        T: {
+            "Net error": {x: 220, y: 450},
+            "Deep error": {x: 220, y: 195},
+            "Wide error": {x: 290, y: 280},
+            "Wide and net error": {x: 290, y: 155},
+        },
     }
 }
 
@@ -38,15 +67,18 @@ const Colors = {
     grass: {
         Ace: "#2296e6",
         in_play: "#ffffff",
+        Unreturnable: "#2296e6",
     },
 
     hard: {
         Ace: "#FFD700",
+        Unreturnable: "black",
         in_play: "green",
     },
 
     clay: {
         Ace: "blue",
+        Unreturnable: "blue",
         in_play: "green",
     }
 
@@ -54,14 +86,30 @@ const Colors = {
 
 const jitter = (range) => (Math.random() - 0.5) * range;
 
-export function getServeCoordinates(direction, score, outcome, surface) {
-    if (serve_outcome in Serve_Errors[direction]) {
+export function getServeCoordinates(first_direction, first_outcome, second_direction,
+                                    second_outcome, had_fault, score, surface) {
+    const side = getAD_DEUCE(score);
+    const shots = [];
+
+    let firstLoc;
+    const error = Serve_Errors[side]?.[first_direction]?.[first_outcome];
+    if (error) {
+        firstLoc = error;
+    } else {
+        firstLoc = SERVE_ZONES[side]?.[first_direction];
 
     }
-    const side = getAD_DEUCE(score);
-    const base = SERVE_ZONES[side]?.[direction];
-    const newColor = Colors[surface]?.[outcome];
-    if (!base) return null;
-    return {x: base.x + jitter(20), y: base.y + jitter(20), color: newColor || "red"}
+    if (firstLoc && first_outcome !== "Shank") {
+        const color = had_fault ? "red" : (Colors[surface]?.[first_outcome] || "black");
+        shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
+    }
+
+    if (had_fault && second_direction && second_outcome !== "Shank") {
+        const secondLoc = SERVE_ZONES[side]?.[second_direction];
+        const color = (Colors[surface]?.[second_outcome] || "black");
+        shots.push({x: secondLoc.x + jitter(20), y: secondLoc.y + jitter(20), color: color})
+    }
+
+    return shots;
 }
 
