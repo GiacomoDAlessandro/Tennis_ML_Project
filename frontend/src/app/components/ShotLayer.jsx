@@ -12,7 +12,7 @@ export default function ShotLayer({s, matchId, playerName}) {
         fetch(`http://localhost:8000/getPlayerServes/${matchId}/${playerName}`)
             .then((res) => res.json())
             .then((data) => {
-                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number))
+                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number, point.serve_outcome))
                     .filter(shot => shot !== null)
                 );
             })
@@ -27,6 +27,11 @@ export default function ShotLayer({s, matchId, playerName}) {
         {x: 210, y: 260},
     ]
 
+    const serveOutcome = {
+        Ace: "blue",
+        in_play: "green"
+    }
+
 
 
     return (
@@ -37,7 +42,7 @@ export default function ShotLayer({s, matchId, playerName}) {
                     x={shot.x + SIDE_PAD}
                     y={shot.y}
                     radius={5}
-                    fill={"red"}
+                    fill={shot.color}
                 />
             ))}
         </Layer>

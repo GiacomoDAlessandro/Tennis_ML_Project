@@ -21,12 +21,17 @@ const SERVE_ZONES = {
     }
 }
 
+const Colors = {
+    Ace: "blue",
+    in_play: "green",
+}
+
 const jitter = (range) => (Math.random() - 0.5) * range;
 
-export function getServeCoordinates(direction, score) {
+export function getServeCoordinates(direction, score, outcome) {
     const side = getAD_DEUCE(score);
     const base = SERVE_ZONES[side]?.[direction];
     if (!base) return null;
-    return { x: base.x + jitter(20), y: base.y + jitter(20)}
+    return { x: base.x + jitter(20), y: base.y + jitter(20), color: Colors[outcome] || "red"}
 }
 
