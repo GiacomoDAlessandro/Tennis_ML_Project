@@ -313,7 +313,7 @@ export default function TennisCourt({
                     </Group>
                 </Group>
             </Layer>
-            <ShotLayer s={s} matchId={matchId} playerName={playerName}/>
+            <ShotLayer s={s} matchId={matchId} playerName={playerName} surface={surface}/>
         </Stage>
     );
 }

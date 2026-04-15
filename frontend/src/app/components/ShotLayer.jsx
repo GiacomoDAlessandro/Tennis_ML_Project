@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { getServeCoordinates } from "../lib/courtUtils";
 
 
-export default function ShotLayer({s, matchId, playerName}) {
+export default function ShotLayer({s, matchId, playerName, surface}) {
     const [shots, setShots] = useState([]);
 
     useEffect(() => {
@@ -12,7 +12,7 @@ export default function ShotLayer({s, matchId, playerName}) {
         fetch(`http://localhost:8000/getPlayerServes/${matchId}/${playerName}`)
             .then((res) => res.json())
             .then((data) => {
-                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number, point.serve_outcome))
+                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number, point.serve_outcome, surface))
                     .filter(shot => shot !== null)
                 );
             })

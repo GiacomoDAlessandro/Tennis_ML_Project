@@ -36,10 +36,28 @@ def clean_int(val):
 def extract_point_summary(first, second):
     try:
         had_fault = isinstance(second, str) and len(second) > 0
-        sequence = second if had_fault else first
 
+        first_serve_dir = None
+        first_serve_outcome = None
+
+        if isinstance(first, str) and len(first) > 0:
+            s = first[1:] if first[0] == 'c' else first
+            first_serve_dir = SERVE_DIRECTIONS.get(s[0])
+            if len(s) > 1 and s[1] in SERVE_OUTCOMES:
+                first_serve_outcome = SERVE_OUTCOMES[s[1]]
+            else:
+                first_serve_outcome = "in_play"
+
+        second_serve_dir = None
+        second_serve_outcome = None
+        return_type = None
+        return_direction = None
+        return_depth = None
+        point_end = None
+
+        sequence = second if had_fault else first
         if not isinstance(sequence, str) or len(sequence) == 0:
-            return None, None, None, None, None, None, had_fault
+            return first_serve_dir, first_serve_outcome, None, None, None, None, None, None, had_fault
 
         if sequence[0] == 'c':
             sequence = sequence[1:]
@@ -47,30 +65,31 @@ def extract_point_summary(first, second):
         serve_dir = SERVE_DIRECTIONS.get(sequence[0])
 
         if len(sequence) > 1 and sequence[1] in SERVE_OUTCOMES:
-
             serve_outcome = SERVE_OUTCOMES[sequence[1]]
-
             rest = sequence[2:]
         else:
             serve_outcome = "in_play"
             rest = sequence[1:]
 
-        return_type = None
-        return_direction = None
-        return_depth = None
+        # Preserve first-serve fault metadata when second serve starts the rally.
+        if had_fault:
+            second_serve_dir = serve_dir
+            second_serve_outcome = serve_outcome
+        else:
+            pass
 
         for i, char in enumerate(rest):
             if char in SHOT_TYPES:
                 return_type = SHOT_TYPES[char]
 
                 j = i + 1
-
                 if j < len(rest) and rest[j] in SHOT_DIRECTIONS_MAP:
                     return_direction = SHOT_DIRECTIONS_MAP[rest[j]]
                     j += 1
                 if j < len(rest) and rest[j] in RETURN_DEPTHS:
                     return_depth = RETURN_DEPTHS[rest[j]]
                 break
+
         last_outcome_char = next((c for c in reversed(sequence) if c in RALLY_OUTCOMES or c in SERVE_OUTCOMES), None)
         if last_outcome_char is None:
             point_end = None
@@ -80,10 +99,11 @@ def extract_point_summary(first, second):
         else:
             point_end = RALLY_OUTCOMES.get(last_outcome_char)
 
-        return serve_dir, serve_outcome, return_type, return_direction, return_depth, point_end, had_fault
+        return (first_serve_dir, first_serve_outcome, second_serve_dir, second_serve_outcome,
+                return_type, return_direction, return_depth, point_end, had_fault)
 
     except Exception:
-        return None, None, None, None, None, None, None
+        return None, None, None, None, None, None, None, None, None
 
 
 def upsert_with_retry(table, batch, on_conflict=None):
@@ -167,10 +187,16 @@ print(f"Total points to insert: {len(points_df)}")
 
 batch = []
 for idx, (_, row) in enumerate(points_df.iterrows()):
-    serve_dir, serve_outcome, return_type, return_dir, return_depth, point_end, had_fault = \
+    first_serve_dir, first_serve_outcome, second_serve_dir, second_serve_outcome, \
+        return_type, return_dir, return_depth, point_end, had_fault = \
         extract_point_summary(row['1st'], row['2nd'])
 
     batch.append({
+        'first_serve_direction': first_serve_dir,
+        'first_serve_outcome': first_serve_outcome,
+        'second_serve_direction': second_serve_dir,
+        'second_serve_outcome': second_serve_outcome,
+        'had_fault': had_fault,
         'match_id': row['match_id'],
         'score': clean(row['Pts']),
         'game_number': clean_int(row['Gm#']),
@@ -183,13 +209,10 @@ for idx, (_, row) in enumerate(points_df.iterrows()):
         'server': clean_int(row['Svr']),
         'first': clean(row['1st']),  # raw string — parsed on demand for visualization
         'second': clean(row['2nd']),  # raw string — parsed on demand for visualization
-        'serve_direction': serve_dir,  # "wide" | "body" | "T"
-        'serve_outcome': serve_outcome,  # "Ace" | "in_play" | "Forced error" etc
         'return_type': return_type,  # "forehand" | "backhand slice" etc
         'return_direction': return_dir,  # "forehand side" | "middle" | "backhand side"
         'return_depth': return_depth,  # "short" | "mid" | "deep"
         'point_end': point_end,  # "Clean Winner" | "Unforced error" etc
-        'had_fault': had_fault  # True = second serve was used
     })
 
     if len(batch) == BATCH_SIZE:
