@@ -1,7 +1,23 @@
 import {COURT_W, COURT_H, SIDE_PAD} from "../lib/courtConstants";
 import {Layer, Circle} from "react-konva";
+import { useState, useEffect } from "react";
+import { getServeCoordinates } from "../lib/courtUtils";
 
-export default function ShotLayer({s}) {
+
+export default function ShotLayer({s, matchId, playerName}) {
+    const [shots, setShots] = useState([]);
+
+    useEffect(() => {
+        if (!matchId) return;
+        fetch(`http://localhost:8000/getPlayerServes/${matchId}/${playerName}`)
+            .then((res) => res.json())
+            .then((data) => {
+                setShots(data['points'].map(point => getServeCoordinates(point.serve_direction, point.point_number))
+                    .filter(shot => shot !== null)
+                );
+            })
+    }, [matchId, playerName]);
+
     const testShots = [
         {x: 340, y: 260},
         {x: 290, y: 260},
@@ -12,9 +28,10 @@ export default function ShotLayer({s}) {
     ]
 
 
+
     return (
         <Layer scaleX={s} scaleY={s}>
-            {testShots.map((shot, i) => (
+            {shots.map((shot, i) => (
                 <Circle
                     key={i}
                     x={shot.x + SIDE_PAD}

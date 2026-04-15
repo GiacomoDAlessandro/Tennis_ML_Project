@@ -68,19 +68,27 @@ def get_player_matches(
     return {"matches": result.data or []}
 
 
-@app.get("/getMatchPoints/{match_id}")
-def get_match_points(match_id: str):
+@app.get("/getPlayerServes/{match_id}/{player_name}")
+def get_match_points(match_id: str, player_name: str):
+
+    ourPlayer = 0
+
+    playerResult = supabase.table("matches").select("player1").eq("match_id", match_id).execute()
+
+    if (player_name == playerResult.data[0]["player1"]):
+        ourPlayer = 1
+    else:
+        ourPlayer = 2
     query = (
         supabase.table("points")
-        .select("score, game_number, point_number, server, first, second, serve_direction, serve_outcome, return_type, point_end, had_fault, return_direction, return_depth")
-        .or_("match_id", match_id)
+        .select("point_number, server, serve_direction, serve_outcome, point_end, had_fault")
+        .eq("match_id", match_id).eq("server", ourPlayer)
     )
 
     result = query.execute()
     return {"points": result.data or []}
 
-@app.get("/getServePoints/{match_id}")
-def get_serve_points(match_id: str):
-    query = (
-        supabas.table("points")
-    )
+
+@app.get("/getPlayerReturns/{match_id}")
+def get_player_returns(match_id: str):
+    query = ()

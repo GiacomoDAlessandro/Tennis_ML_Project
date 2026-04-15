@@ -295,7 +295,10 @@ export default function MatchSimulatorPage() {
                                 key={`${selectedNameOne}-${selectedSurfaceOne}`}
                                 items={onePlayerMatchOptions}
                                 value={selectedOnePlayerMatch}
-                                onValueChange={setSelectedOnePlayerMatch}>
+                                onValueChange={(val) => {
+                                    console.log(val);
+                                    setSelectedOnePlayerMatch(val);
+                                }}>
                                 <ComboboxInput
                                     placeholder="Select a match"
                                     className="w-full min-w-0"
@@ -318,7 +321,7 @@ export default function MatchSimulatorPage() {
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameOne}
                                 </h3>
-                                <TennisCourt surface={selectedSurfaceOne} courtScale={0.62}/>
+                                <TennisCourt surface={selectedSurfaceOne} playerName={selectedNameOne} matchId={selectedOnePlayerMatch?.value} courtScale={0.62}/>
                             </div>
                         </div>
                     )}

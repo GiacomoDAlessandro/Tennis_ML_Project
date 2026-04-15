@@ -76,6 +76,8 @@ export default function TennisCourt({
                                         scale = 1,
                                         courtScale = 1,
                                         fitViewport = false,
+                                        matchId = "",
+                                        playerName ="",
                                     }) {
     const [mounted, setMounted] = useState(false);
     const [fitScale, setFitScale] = useState(0.72);
@@ -311,7 +313,7 @@ export default function TennisCourt({
                     </Group>
                 </Group>
             </Layer>
-            <ShotLayer s={s}/>
+            <ShotLayer s={s} matchId={matchId} playerName={playerName}/>
         </Stage>
     );
 }
