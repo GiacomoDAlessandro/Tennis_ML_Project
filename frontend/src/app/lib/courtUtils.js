@@ -72,7 +72,7 @@ const Colors = {
 
     hard: {
         Ace: "#FFD700",
-        Unreturnable: "black",
+        Unreturnable: "#2296e6",
         in_play: "green",
     },
 
@@ -91,25 +91,39 @@ export function getServeCoordinates(first_direction, first_outcome, second_direc
     const side = getAD_DEUCE(score);
     const shots = [];
 
+    surface = surface?.toLowerCase();
+
     let firstLoc;
     const error = Serve_Errors[side]?.[first_direction]?.[first_outcome];
     if (error) {
         firstLoc = error;
     } else {
         firstLoc = SERVE_ZONES[side]?.[first_direction];
-
     }
+
     if (firstLoc && first_outcome !== "Shank") {
-        const color = had_fault ? "red" : (Colors[surface]?.[first_outcome] || "black");
+        const isError = error || had_fault;
+        const color = isError ? "red" : (Colors[surface]?.[first_outcome] ||  "black");
         shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
     }
 
-    if (had_fault && second_direction && second_outcome !== "Shank") {
-        const secondLoc = SERVE_ZONES[side]?.[second_direction];
-        const color = (Colors[surface]?.[second_outcome] || "black");
-        shots.push({x: secondLoc.x + jitter(20), y: secondLoc.y + jitter(20), color: color})
+    if (had_fault && second_direction) {
+        let secondLoc;
+        const secondError = Serve_Errors[side]?.[second_direction]?.[second_outcome];
+
+        if (secondError) {
+            secondLoc = secondError;
+        } else {
+            secondLoc = SERVE_ZONES[side]?.[second_direction];
+        }
+
+        if (secondLoc && second_outcome !== "Shank") {
+            const color = secondError ? "red" : (Colors[surface]?.[second_outcome] || "black");
+            shots.push({x: secondLoc.x + jitter(20), y: secondLoc.y + jitter(20), color: color})
+        }
     }
 
     return shots;
 }
+
 

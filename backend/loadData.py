@@ -2,7 +2,14 @@ import pandas as pd
 from db import supabase
 import math
 import time
-from PointsParse import SERVE_DIRECTIONS, SHOT_TYPES, OUTCOMES, SERVE_OUTCOMES, RALLY_OUTCOMES
+from PointsParse import (
+    SERVE_DIRECTIONS,
+    SHOT_TYPES,
+    OUTCOMES,
+    SERVE_OUTCOMES,
+    RALLY_OUTCOMES,
+    split_leading_serve,
+)
 
 RETURN_DEPTHS = {
     "7": "short",
@@ -41,12 +48,8 @@ def extract_point_summary(first, second):
         first_serve_outcome = None
 
         if isinstance(first, str) and len(first) > 0:
-            s = first[1:] if first[0] == 'c' else first
-            first_serve_dir = SERVE_DIRECTIONS.get(s[0])
-            if len(s) > 1 and s[1] in SERVE_OUTCOMES:
-                first_serve_outcome = SERVE_OUTCOMES[s[1]]
-            else:
-                first_serve_outcome = "in_play"
+            first_serve_dir, first_out, _ = split_leading_serve(first)
+            first_serve_outcome = "in_play" if first_out is None else first_out
 
         second_serve_dir = None
         second_serve_outcome = None
@@ -59,17 +62,8 @@ def extract_point_summary(first, second):
         if not isinstance(sequence, str) or len(sequence) == 0:
             return first_serve_dir, first_serve_outcome, None, None, None, None, None, None, had_fault
 
-        if sequence[0] == 'c':
-            sequence = sequence[1:]
-
-        serve_dir = SERVE_DIRECTIONS.get(sequence[0])
-
-        if len(sequence) > 1 and sequence[1] in SERVE_OUTCOMES:
-            serve_outcome = SERVE_OUTCOMES[sequence[1]]
-            rest = sequence[2:]
-        else:
-            serve_outcome = "in_play"
-            rest = sequence[1:]
+        serve_dir, serve_out, rest = split_leading_serve(sequence)
+        serve_outcome = "in_play" if serve_out is None else serve_out
 
         # Preserve first-serve fault metadata when second serve starts the rally.
         if had_fault:
@@ -90,7 +84,10 @@ def extract_point_summary(first, second):
                     return_depth = RETURN_DEPTHS[rest[j]]
                 break
 
-        last_outcome_char = next((c for c in reversed(sequence) if c in RALLY_OUTCOMES or c in SERVE_OUTCOMES), None)
+        last_outcome_char = next(
+            (c for c in reversed(sequence) if c in RALLY_OUTCOMES or c in SERVE_OUTCOMES),
+            None,
+        )
         if last_outcome_char is None:
             point_end = None
         elif rest == "" or not any(c in SHOT_TYPES for c in rest):
@@ -124,7 +121,7 @@ def upsert_with_retry(table, batch, on_conflict=None):
                 return False
 
 
-# ── DATA FILES ──────────────────────────────────────────────────────────────
+# ── DATA FILES (run pipeline only via ``python loadData.py``) ───────────────
 
 MATCHES_FILE = '../Data/charting-m-matches.csv'
 
@@ -132,94 +129,100 @@ POINTS_FILES = [
     '../Data/charting-m-points-2020s.csv',
 ]
 
-matches_df = pd.read_csv(MATCHES_FILE)
-matches_df = matches_df[matches_df['Surface'].isin(['Hard', 'Clay', 'Grass'])]
-valid_match_ids = set(matches_df['match_id'])
 
-# ── LOADING MATCHES ──────────────────────────────────────────────────────────
-"""
-winners_lookup = {}
-for file in POINTS_FILES:
-    try:
-        df = pd.read_csv(file, low_memory=False)
-        w = df.sort_values('Pt').groupby('match_id').last()['PtWinner'].to_dict()
-        winners_lookup.update(w)
-        print(f"Loaded winners from {file}")
-    except FileNotFoundError:
-        print(f"Skipping missing file: {file}")
+def _run_load_pipeline():
+    matches_df = pd.read_csv(MATCHES_FILE)
+    matches_df = matches_df[matches_df['Surface'].isin(['Hard', 'Clay', 'Grass'])]
+    valid_match_ids = set(matches_df['match_id'])
 
-batch = []
-for _, row in matches_df.iterrows():
-    match_id = row['match_id']
-    winner = winners_lookup.get(match_id)
-    batch.append({
-        'match_id': match_id,
-        'player1': None if pd.isna(row['Player 1']) else row['Player 1'],
-        'player2': None if pd.isna(row['Player 2']) else row['Player 2'],
-        'surface': None if pd.isna(row['Surface']) else row['Surface'],
-        'tournament': None if pd.isna(row['Tournament']) else row['Tournament'],
-        'round': None if pd.isna(row['Round']) else row['Round'],
-        'winner': None if pd.isna(winner) else int(winner)
-    })
+    # ── LOADING MATCHES ──────────────────────────────────────────────────────
+    """
+    winners_lookup = {}
+    for file in POINTS_FILES:
+        try:
+            df = pd.read_csv(file, low_memory=False)
+            w = df.sort_values('Pt').groupby('match_id').last()['PtWinner'].to_dict()
+            winners_lookup.update(w)
+            print(f"Loaded winners from {file}")
+        except FileNotFoundError:
+            print(f"Skipping missing file: {file}")
 
-for i in range(0, len(batch), BATCH_SIZE):
-    success = upsert_with_retry('matches', batch[i:i + BATCH_SIZE])
-    print(f"{'✓' if success else '✗'} Matches: {min(i + BATCH_SIZE, len(batch))} / {len(batch)}")
-print("Matches done")
+    batch = []
+    for _, row in matches_df.iterrows():
+        match_id = row['match_id']
+        winner = winners_lookup.get(match_id)
+        batch.append({
+            'match_id': match_id,
+            'player1': None if pd.isna(row['Player 1']) else row['Player 1'],
+            'player2': None if pd.isna(row['Player 2']) else row['Player 2'],
+            'surface': None if pd.isna(row['Surface']) else row['Surface'],
+            'tournament': None if pd.isna(row['Tournament']) else row['Tournament'],
+            'round': None if pd.isna(row['Round']) else row['Round'],
+            'winner': None if pd.isna(winner) else int(winner)
+        })
 
-"""
-# ── LOADING POINTS ───────────────────────────────────────────────────────────
+    for i in range(0, len(batch), BATCH_SIZE):
+        success = upsert_with_retry('matches', batch[i:i + BATCH_SIZE])
+        print(f"{'✓' if success else '✗'} Matches: {min(i + BATCH_SIZE, len(batch))} / {len(batch)}")
+    print("Matches done")
 
-all_points = []
-for file in POINTS_FILES:
-    try:
-        df = pd.read_csv(file, low_memory=False)
-        df = df[df['match_id'].isin(valid_match_ids)]
-        df = df.drop_duplicates(subset=['match_id', 'Pt'])
-        all_points.append(df)
-        print(f"Loaded {file}: {len(df)} rows")
-    except FileNotFoundError:
-        print(f"Skipping missing file: {file}")
+    """
+    # ── LOADING POINTS ───────────────────────────────────────────────────────
 
-points_df = pd.concat(all_points, ignore_index=True)
-points_df = points_df.drop_duplicates(subset=['match_id', 'Pt'])
-print(f"Total points to insert: {len(points_df)}")
+    all_points = []
+    for file in POINTS_FILES:
+        try:
+            df = pd.read_csv(file, low_memory=False)
+            df = df[df['match_id'].isin(valid_match_ids)]
+            df = df.drop_duplicates(subset=['match_id', 'Pt'])
+            all_points.append(df)
+            print(f"Loaded {file}: {len(df)} rows")
+        except FileNotFoundError:
+            print(f"Skipping missing file: {file}")
 
-batch = []
-for idx, (_, row) in enumerate(points_df.iterrows()):
-    first_serve_dir, first_serve_outcome, second_serve_dir, second_serve_outcome, \
-        return_type, return_dir, return_depth, point_end, had_fault = \
-        extract_point_summary(row['1st'], row['2nd'])
+    points_df = pd.concat(all_points, ignore_index=True)
+    points_df = points_df.drop_duplicates(subset=['match_id', 'Pt'])
+    print(f"Total points to insert: {len(points_df)}")
 
-    batch.append({
-        'first_serve_direction': first_serve_dir,
-        'first_serve_outcome': first_serve_outcome,
-        'second_serve_direction': second_serve_dir,
-        'second_serve_outcome': second_serve_outcome,
-        'had_fault': had_fault,
-        'match_id': row['match_id'],
-        'score': clean(row['Pts']),
-        'game_number': clean_int(row['Gm#']),
-        'point_number': clean_int(row['Pt']),
-        'set1': clean_int(row['Set1']),
-        'set2': clean_int(row['Set2']),
-        'game1': clean_int(row['Gm1']),
-        'game2': clean_int(row['Gm2']),
-        'winner': clean_int(row['PtWinner']),
-        'server': clean_int(row['Svr']),
-        'first': clean(row['1st']),  # raw string — parsed on demand for visualization
-        'second': clean(row['2nd']),  # raw string — parsed on demand for visualization
-        'return_type': return_type,  # "forehand" | "backhand slice" etc
-        'return_direction': return_dir,  # "forehand side" | "middle" | "backhand side"
-        'return_depth': return_depth,  # "short" | "mid" | "deep"
-        'point_end': point_end,  # "Clean Winner" | "Unforced error" etc
-    })
+    batch = []
+    for idx, (_, row) in enumerate(points_df.iterrows()):
+        first_serve_dir, first_serve_outcome, second_serve_dir, second_serve_outcome, \
+            return_type, return_dir, return_depth, point_end, had_fault = \
+            extract_point_summary(row['1st'], row['2nd'])
 
-    if len(batch) == BATCH_SIZE:
-        success = upsert_with_retry('points', batch, on_conflict='match_id,point_number')
-        print(f"{'✓' if success else '✗'} Points: {idx + 1} / {len(points_df)}")
-        batch = []
+        batch.append({
+            'first_serve_direction': first_serve_dir,
+            'first_serve_outcome': first_serve_outcome,
+            'second_serve_direction': second_serve_dir,
+            'second_serve_outcome': second_serve_outcome,
+            'had_fault': had_fault,
+            'match_id': row['match_id'],
+            'score': clean(row['Pts']),
+            'game_number': clean_int(row['Gm#']),
+            'point_number': clean_int(row['Pt']),
+            'set1': clean_int(row['Set1']),
+            'set2': clean_int(row['Set2']),
+            'game1': clean_int(row['Gm1']),
+            'game2': clean_int(row['Gm2']),
+            'winner': clean_int(row['PtWinner']),
+            'server': clean_int(row['Svr']),
+            'first': clean(row['1st']),
+            'second': clean(row['2nd']),
+            'return_type': return_type,
+            'return_direction': return_dir,
+            'return_depth': return_depth,
+            'point_end': point_end,
+        })
 
-if batch:
-    upsert_with_retry('points', batch, on_conflict='match_id,point_number')
-print("Points done")
+        if len(batch) == BATCH_SIZE:
+            success = upsert_with_retry('points', batch, on_conflict='match_id,point_number')
+            print(f"{'✓' if success else '✗'} Points: {idx + 1} / {len(points_df)}")
+            batch = []
+
+    if batch:
+        upsert_with_retry('points', batch, on_conflict='match_id,point_number')
+    print("Points done")
+
+
+if __name__ == "__main__":
+    _run_load_pipeline()

@@ -202,6 +202,8 @@ rally_forced    : Points won because opponent made a forced error
 unforced        : Points LOST because this player made an unforced error
                   NOTE: this is errors made, not errors by opponent
 """
+from typing import Optional
+
 import pandas as pd
 
 
@@ -278,6 +280,40 @@ RALLY_OUTCOMES = {
 
 OUTCOMES = RALLY_OUTCOMES
 
+
+def split_leading_serve(sequence: Optional[str]):
+    """
+    Parse the opening serve token of a charting string.
+
+    First-serve faults may be encoded as ``4+n`` / ``6+d`` etc.: direction (4/5/6),
+    optional ``+`` (approach / net rush in charting notation), then a single-letter
+    serve outcome from SERVE_OUTCOMES (``n``, ``d``, ``w``, …).
+
+    Returns (direction_label, serve_outcome_or_None, rally_rest) where
+    serve_outcome_or_None is None when the rally continues after the serve.
+    ``rally_rest`` is the substring after the consumed serve prefix (may be empty).
+    """
+    if not isinstance(sequence, str) or not sequence:
+        return None, None, ""
+
+    s = sequence[1:] if sequence[0] == "c" else sequence
+    if not s or s[0] not in SERVE_DIRECTIONS:
+        return None, None, sequence
+
+    direction = SERVE_DIRECTIONS[s[0]]
+    tail = s[1:]
+    if not tail:
+        return direction, None, ""
+
+    if tail[0] in SERVE_OUTCOMES:
+        return direction, SERVE_OUTCOMES[tail[0]], tail[1:]
+
+    if tail[0] == "+" and len(tail) > 1 and tail[1] in SERVE_OUTCOMES:
+        return direction, SERVE_OUTCOMES[tail[1]], tail[2:]
+
+    return direction, None, tail
+
+
 OTHER_SYMBOLS = {
     "c": "Let serve",
     ";": "Second bounce (Hawkeye Challenge)",
@@ -338,20 +374,19 @@ def parse_shot_sequence(curr_points: Point) -> list[dict]:
     else:
         sequence = curr_points.second
         miss = curr_points.first
-        fault_outcome = SERVE_OUTCOMES.get(miss[1]) if len(miss) > 1 else None
-        current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[miss[0]], "outcomes": fault_outcome}
-        shots.append(current_shot)
+        fault_dir, fault_outcome, _ = split_leading_serve(miss)
+        if fault_dir is not None:
+            current_shot = {"type": "serve", "direction": fault_dir, "outcomes": fault_outcome}
+            shots.append(current_shot)
 
-    # Ace handling, if ace the data is simply (ex. 4*)
-    if sequence[0] in SERVE_DIRECTIONS:
-        current_shot = {"type": "serve", "direction": SERVE_DIRECTIONS[sequence[0]], "outcomes": None}
-        if len(sequence) > 1 and sequence[1] in SERVE_OUTCOMES:
-            current_shot["outcomes"] = SERVE_OUTCOMES[sequence[1]]
+    # Ace / service winner / in-play serve: strip serve prefix (incl. c let, 4+n faults on replay rows)
+    if isinstance(sequence, str) and sequence:
+        serve_dir, serve_outcome, rally_rest = split_leading_serve(sequence)
+        if serve_dir is not None:
+            current_shot = {"type": "serve", "direction": serve_dir, "outcomes": serve_outcome}
             shots.append(current_shot)
             current_shot = {}
-            sequence = sequence[2:]  # chop both serve direction and outcome
-        else:
-            sequence = sequence[1:]  # just chop serve direction
+            sequence = rally_rest
 
     for char in sequence:
         if char in SHOT_TYPES:
