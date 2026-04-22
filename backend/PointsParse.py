@@ -217,6 +217,7 @@ SERVE_DIRECTIONS = {
     "4": "wide",
     "5": "body",
     "6": "T",
+    "0": "unknown",
 }
 
 SHOT_TYPES = {
@@ -263,6 +264,7 @@ SERVE_OUTCOMES = {
     "!": "Shank",
     "e": "Unknown fault",
     "g": "General Error",
+    "V": "Time violation",
 }
 
 RALLY_OUTCOMES = {
@@ -296,7 +298,12 @@ def split_leading_serve(sequence: Optional[str]):
     if not isinstance(sequence, str) or not sequence:
         return None, None, ""
 
-    s = sequence[1:] if sequence[0] == "c" else sequence
+    s = sequence
+    while s and s[0] == "c":
+        s = s[1:]
+    # Fault-only encoding with no direction (e.g. "n", "w", "e")
+    if s and s[0] in SERVE_OUTCOMES:
+        return None, SERVE_OUTCOMES[s[0]], s[1:]
     if not s or s[0] not in SERVE_DIRECTIONS:
         return None, None, sequence
 
@@ -308,8 +315,12 @@ def split_leading_serve(sequence: Optional[str]):
     if tail[0] in SERVE_OUTCOMES:
         return direction, SERVE_OUTCOMES[tail[0]], tail[1:]
 
-    if tail[0] == "+" and len(tail) > 1 and tail[1] in SERVE_OUTCOMES:
-        return direction, SERVE_OUTCOMES[tail[1]], tail[2:]
+    # Handle approach/net-position markers before a serve fault (e.g. "4+n", "4^n")
+    i = 0
+    while i < len(tail) and tail[i] in {"+", "^", "-", "="}:
+        i += 1
+    if i < len(tail) and tail[i] in SERVE_OUTCOMES:
+        return direction, SERVE_OUTCOMES[tail[i]], tail[i + 1:]
 
     return direction, None, tail
 
@@ -375,14 +386,14 @@ def parse_shot_sequence(curr_points: Point) -> list[dict]:
         sequence = curr_points.second
         miss = curr_points.first
         fault_dir, fault_outcome, _ = split_leading_serve(miss)
-        if fault_dir is not None:
+        if fault_dir is not None or fault_outcome is not None:
             current_shot = {"type": "serve", "direction": fault_dir, "outcomes": fault_outcome}
             shots.append(current_shot)
 
     # Ace / service winner / in-play serve: strip serve prefix (incl. c let, 4+n faults on replay rows)
     if isinstance(sequence, str) and sequence:
         serve_dir, serve_outcome, rally_rest = split_leading_serve(sequence)
-        if serve_dir is not None:
+        if serve_dir is not None or serve_outcome is not None:
             current_shot = {"type": "serve", "direction": serve_dir, "outcomes": serve_outcome}
             shots.append(current_shot)
             current_shot = {}
