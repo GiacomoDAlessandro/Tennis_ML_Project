@@ -49,6 +49,31 @@ export default function MatchSimulatorPage() {
     const [selectedMatchOne, setSelectedMatchOne] = useState([]);
     const [selectedMatchTwo, setSelectedMatchTwo] = useState([]);
     const [selectedOnePlayerMatch, setSelectedOnePlayerMatch] = useState(null);
+    const [selectedTwoPlayerMatchOne, setSelectedTwoPlayerMatchOne] = useState(null);
+    const [selectedTwoPlayerMatchTwo, setSelectedTwoPlayerMatchTwo] = useState(null);
+
+    //Getting matches from supabase
+    async function fetchPlayerMatches(playerName, surface, matchNum) {
+        const encName = encodeURIComponent(playerName);
+        const qs =
+            surface != null && surface !== ""
+                ? `?surface=${encodeURIComponent(surface)}`
+                : "";
+        const res = await fetch(
+            `http://localhost:8000/getPlayerMatches/${encName}${qs}`
+        );
+        const data = await res.json();
+
+        //matches
+        const matches = Array.isArray(data?.matches) ? data.matches : [];
+
+        //Initially match selected is every match until user selects a specific match
+        if (matchNum === "One") {
+            setSelectedMatchOne(matches);
+        } else if (matchNum === "Two") {
+            setSelectedMatchTwo(matches);
+        }
+    }
 
 
     useEffect(() => {
@@ -126,30 +151,21 @@ export default function MatchSimulatorPage() {
         }));
     }, [selectedMatchOne, selectedNameOne]);
 
+    const twoPlayerMatchOptionsOne = useMemo(() => {
+        if (!Array.isArray(selectedMatchOne)) return [];
+        return selectedMatchOne.map((m) => ({
+            label: formatMatchDisplay(m, selectedNameOne),
+            value: String(m.match_id),
+        }));
+    }, [selectedMatchOne, selectedNameOne]);
 
-    //Getting matches from supabase
-    const fetchPlayerMatches = async (playerName, surface, matchNum) => {
-        const encName = encodeURIComponent(playerName);
-        const qs =
-            surface != null && surface !== ""
-                ? `?surface=${encodeURIComponent(surface)}`
-                : "";
-        const res = await fetch(
-            `http://localhost:8000/getPlayerMatches/${encName}${qs}`
-        );
-        const data = await res.json();
-
-        //matches
-        const matches = Array.isArray(data?.matches) ? data.matches : [];
-
-        //Initially match selected is every match until user selects a specific match
-        if (matchNum === "One") {
-            setSelectedMatchOne(matches);
-        } else if (matchNum === "Two") {
-            setSelectedMatchTwo(matches);
-        }
-    };
-
+    const twoPlayerMatchOptionsTwo = useMemo(() => {
+        if (!Array.isArray(selectedMatchTwo)) return [];
+        return selectedMatchTwo.map((m) => ({
+            label: formatMatchDisplay(m, selectedNameTwo),
+            value: String(m.match_id),
+        }));
+    }, [selectedMatchTwo, selectedNameTwo]);
     return (
         <div className="flex min-h-screen flex-col bg-zinc-100 text-zinc-900">
             <Header/>
@@ -191,6 +207,8 @@ export default function MatchSimulatorPage() {
                                 setSelectedMatchOne([]);
                                 setSelectedMatchTwo([]);
                                 setSelectedOnePlayerMatch(null);
+                                setSelectedTwoPlayerMatchOne(null);
+                                setSelectedTwoPlayerMatchTwo(null);
                             }}>
                             <span className="text-sm leading-none">←</span>
                         </button>
@@ -240,6 +258,8 @@ export default function MatchSimulatorPage() {
                                 setSelectedSurfaceTwo(surfaceTwo);
                                 fetchPlayerMatches(playerOne, surfaceOne, "One");
                                 fetchPlayerMatches(playerTwo, surfaceTwo, "Two");
+                                setSelectedTwoPlayerMatchOne(null);
+                                setSelectedTwoPlayerMatchTwo(null);
                                 setTennisCourt(true);
                             }}
                         />
@@ -252,14 +272,68 @@ export default function MatchSimulatorPage() {
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameOne}
                                 </h3>
-                                <TennisCourt surface={selectedSurfaceOne} courtScale={0.62}/>
+                                <Combobox
+                                    key={`${selectedNameOne}-${selectedSurfaceOne}-compare`}
+                                    items={twoPlayerMatchOptionsOne}
+                                    value={selectedTwoPlayerMatchOne}
+                                    onValueChange={setSelectedTwoPlayerMatchOne}>
+                                    <ComboboxInput
+                                        placeholder="Select a match"
+                                        className="mb-2 w-full min-w-0"
+                                    />
+                                    <ComboboxContent>
+                                        <ComboboxEmpty>
+                                            No matches found on this surface
+                                        </ComboboxEmpty>
+                                        <ComboboxList>
+                                            {(item) => (
+                                                <ComboboxItem key={item.value} value={item}>
+                                                    {item.label}
+                                                </ComboboxItem>
+                                            )}
+                                        </ComboboxList>
+                                    </ComboboxContent>
+                                </Combobox>
+                                <TennisCourt
+                                    surface={selectedSurfaceOne}
+                                    playerName={selectedNameOne}
+                                    matchId={selectedTwoPlayerMatchOne?.value}
+                                    courtScale={0.62}
+                                />
                             </div>
                             <div
                                 className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
                                     {selectedNameTwo}
                                 </h3>
-                                <TennisCourt surface={selectedSurfaceTwo} courtScale={0.62}/>
+                                <Combobox
+                                    key={`${selectedNameTwo}-${selectedSurfaceTwo}-compare`}
+                                    items={twoPlayerMatchOptionsTwo}
+                                    value={selectedTwoPlayerMatchTwo}
+                                    onValueChange={setSelectedTwoPlayerMatchTwo}>
+                                    <ComboboxInput
+                                        placeholder="Select a match"
+                                        className="mb-2 w-full min-w-0"
+                                    />
+                                    <ComboboxContent>
+                                        <ComboboxEmpty>
+                                            No matches found on this surface
+                                        </ComboboxEmpty>
+                                        <ComboboxList>
+                                            {(item) => (
+                                                <ComboboxItem key={item.value} value={item}>
+                                                    {item.label}
+                                                </ComboboxItem>
+                                            )}
+                                        </ComboboxList>
+                                    </ComboboxContent>
+                                </Combobox>
+                                <TennisCourt
+                                    surface={selectedSurfaceTwo}
+                                    playerName={selectedNameTwo}
+                                    matchId={selectedTwoPlayerMatchTwo?.value}
+                                    courtScale={0.62}
+                                />
                             </div>
                         </div>
                     )}

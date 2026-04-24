@@ -3,6 +3,7 @@ import { COURT_W, COURT_H, SIDE_PAD } from "../lib/courtConstants";
 import React, {useEffect, useState} from "react";
 import {Line, Rect, Stage, Layer, Circle, Group} from "react-konva";
 import ShotLayer from './ShotLayer'
+import {SERVE_COLORS} from "../lib/courtUtils";
 
 /** Extra out area past the right outer boundary */
 const RIGHT_OUT = 50;
@@ -159,6 +160,7 @@ export default function TennisCourt({
 
     const colors = courtColors[surface.toLowerCase()];
     const sl = colors.sideLine;
+    const legendColors = SERVE_COLORS[surface.toLowerCase()] || SERVE_COLORS.hard;
 
     const OX = SIDE_PAD;
     const doublesLeft = OX + courtX(DOUBLES_LEFT_X_PCT);
@@ -212,8 +214,9 @@ export default function TennisCourt({
     const benchX = umpireX;
 
     return (
-        <Stage width={STAGE_W * s} height={STAGE_H * s}>
-            <Layer scaleX={s} scaleY={s}>
+        <div className="flex flex-col items-center gap-2">
+            <Stage width={STAGE_W * s} height={STAGE_H * s}>
+                <Layer scaleX={s} scaleY={s}>
                 <Rect x={0} y={0} width={STAGE_W} height={STAGE_H} fill={colors.outArea}/>
                 {surface.toLowerCase() === "grass" &&
                     Array.from({length: Math.ceil(STAGE_W / GRASS_STRIPE_W)}).map((_, i) => {
@@ -312,8 +315,27 @@ export default function TennisCourt({
                         />
                     </Group>
                 </Group>
-            </Layer>
-            <ShotLayer s={s} matchId={matchId} playerName={playerName} surface={surface}/>
-        </Stage>
+                </Layer>
+                <ShotLayer s={s} matchId={matchId} playerName={playerName} surface={surface}/>
+            </Stage>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-700">
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.Ace}}/>
+                    Ace
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.Unreturnable}}/>
+                    Unreturnable
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.in_play}}/>
+                    In play
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-full border border-zinc-400 bg-red-500"/>
+                    Fault / error
+                </span>
+            </div>
+        </div>
     );
 }

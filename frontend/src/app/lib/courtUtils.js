@@ -5,8 +5,8 @@ function getAD_DEUCE(score) {
     if (SCORE_TO_SIDE[score]) return SCORE_TO_SIDE[score];
 
     const parts = score.split('-');
-    if (parts.length === 2 && isNaN(parts[0]) && !isNan(parts[1])) {
-        const total = parseInt(parts[0]) + parseint(parts[1]);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        const total = parseInt(parts[0]) + parseInt(parts[1]);
         return total % 2 === 0 ? "D" : "A";
     }
 }
@@ -41,8 +41,8 @@ const Serve_Errors = {
         T: {
             "Net error": {x: 220, y: 440},
             "Deep error": {x: 220, y: 195},
-            "Wide error": {x: 150, y: 280},
-            "Wide and net error": {x: 150, y: 155},
+            "Wide error": {x: 205, y: 280},
+            "Wide and net error": {x: 205, y: 155},
         },
     },
     A: {
@@ -61,13 +61,13 @@ const Serve_Errors = {
         T: {
             "Net error": {x: 220, y: 450},
             "Deep error": {x: 220, y: 195},
-            "Wide error": {x: 290, y: 280},
-            "Wide and net error": {x: 290, y: 155},
+            "Wide error": {x: 245, y: 280},
+            "Wide and net error": {x: 245, y: 155},
         },
     }
 }
 
-const Colors = {
+export const SERVE_COLORS = {
     grass: {
         Ace: "#2296e6",
         in_play: "#ffffff",
@@ -89,7 +89,7 @@ const Colors = {
 }
 
 const SCORE_TO_SIDE = {
-    "0-0": "D",  "15-0": "D",  "30-0": "D",  "40-0": "D",
+    "0-0": "D", "15-0": "D", "30-0": "D", "40-0": "D",
     "0-15": "A", "15-15": "A", "30-15": "A", "40-15": "A",
     "0-30": "D", "15-30": "D", "30-30": "D", "40-30": "D",
     "0-40": "A", "15-40": "A", "30-40": "A", "40-40": "D",
@@ -114,9 +114,15 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
     }
 
     if (firstLoc && first_outcome !== "Shank") {
-        const isError = error || Boolean(had_fault == true || had_fault == "true");
-        const color = isError ? "red" : (Colors[surface]?.[first_outcome] ||  "black");
-        shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
+        const isError = Boolean(had_fault == true || had_fault == "true");
+        if (isError && !error) {
+
+        } else {
+            const color = first_outcome === "in_play"
+                ? (SERVE_COLORS[surface]?.[first_outcome] || "black")
+                : ((error || isError) ? "red" : (SERVE_COLORS[surface]?.[first_outcome] || "black"));
+            shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
+        }
     }
 
     if (had_fault && second_direction) {
@@ -130,7 +136,9 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
         }
 
         if (secondLoc && second_outcome !== "Shank") {
-            const color = secondError ? "red" : (Colors[surface]?.[second_outcome] || "black");
+            const color = second_outcome === "in_play"
+                ? (SERVE_COLORS[surface]?.[second_outcome] || "black")
+                : (secondError ? "red" : (SERVE_COLORS[surface]?.[second_outcome] || "black"));
             shots.push({x: secondLoc.x + jitter(20), y: secondLoc.y + jitter(20), color: color})
         }
     }
