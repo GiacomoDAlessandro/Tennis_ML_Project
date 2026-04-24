@@ -12,8 +12,8 @@ export default function ShotLayer({s, matchId, playerName, surface}) {
         fetch(`http://localhost:8000/getPlayerServes/${matchId}/${playerName}`)
             .then((res) => res.json())
             .then((data) => {
-                setShots(data['points'].flatMap(point => getServeCoordinates(point.first_serve_direction, point.first_serve_outcome, point.second_serve_direction,
-                    point.second_serve_outcome, point.had_fault, point.point_number, surface))
+                setShots(data['points'].flatMap(point => getServeCoordinates(point.score, point.first_serve_direction, point.first_serve_outcome, point.second_serve_direction,
+                    point.second_serve_outcome, point.had_fault, surface))
                     .filter(shot => shot !== null)
                 );
             })

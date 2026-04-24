@@ -1,9 +1,13 @@
 //These sides are where the server serves from
 function getAD_DEUCE(score) {
-    if (score % 2 == 0) {
-        return "D";
-    } else {
-        return "A";
+    if (!score) return "D";
+
+    if (SCORE_TO_SIDE[score]) return SCORE_TO_SIDE[score];
+
+    const parts = score.split('-');
+    if (parts.length === 2 && isNaN(parts[0]) && !isNan(parts[1])) {
+        const total = parseInt(parts[0]) + parseint(parts[1]);
+        return total % 2 === 0 ? "D" : "A";
     }
 }
 
@@ -84,10 +88,18 @@ const Colors = {
 
 }
 
+const SCORE_TO_SIDE = {
+    "0-0": "D",  "15-0": "D",  "30-0": "D",  "40-0": "D",
+    "0-15": "A", "15-15": "A", "30-15": "A", "40-15": "A",
+    "0-30": "D", "15-30": "D", "30-30": "D", "40-30": "D",
+    "0-40": "A", "15-40": "A", "30-40": "A", "40-40": "D",
+    "AD-40": "D", "40-AD": "A",
+}
+
 const jitter = (range) => (Math.random() - 0.5) * range;
 
-export function getServeCoordinates(first_direction, first_outcome, second_direction,
-                                    second_outcome, had_fault, score, surface) {
+export function getServeCoordinates(score, first_direction, first_outcome, second_direction,
+                                    second_outcome, had_fault, surface) {
     const side = getAD_DEUCE(score);
     const shots = [];
 
@@ -102,7 +114,7 @@ export function getServeCoordinates(first_direction, first_outcome, second_direc
     }
 
     if (firstLoc && first_outcome !== "Shank") {
-        const isError = error || had_fault;
+        const isError = error || Boolean(had_fault == true || had_fault == "true");
         const color = isError ? "red" : (Colors[surface]?.[first_outcome] ||  "black");
         shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
     }
