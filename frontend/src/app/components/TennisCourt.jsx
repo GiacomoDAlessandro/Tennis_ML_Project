@@ -82,6 +82,13 @@ export default function TennisCourt({
                                     }) {
     const [mounted, setMounted] = useState(false);
     const [fitScale, setFitScale] = useState(0.72);
+    const [serveStats, setServeStats] = useState({
+        aces: 0,
+        unreturnables: 0,
+        inPlay: 0,
+        faults: 0,
+    });
+    const [legendHover, setLegendHover] = useState(null);
 
     useEffect(() => {
         setMounted(true);
@@ -316,25 +323,52 @@ export default function TennisCourt({
                     </Group>
                 </Group>
                 </Layer>
-                <ShotLayer s={s} matchId={matchId} playerName={playerName} surface={surface}/>
+                <ShotLayer
+                    s={s}
+                    matchId={matchId}
+                    playerName={playerName}
+                    surface={surface}
+                    onStatsChange={setServeStats}
+                />
             </Stage>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-700">
-                <span className="inline-flex items-center gap-1">
+            <div className="relative flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-700">
+                <span
+                    className="inline-flex items-center gap-1"
+                    onMouseEnter={() => setLegendHover({label: "Aces", value: serveStats.aces})}
+                    onMouseLeave={() => setLegendHover(null)}
+                >
                     <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.Ace}}/>
                     Ace
                 </span>
-                <span className="inline-flex items-center gap-1">
+                <span
+                    className="inline-flex items-center gap-1"
+                    onMouseEnter={() => setLegendHover({label: "Unreturnables", value: serveStats.unreturnables})}
+                    onMouseLeave={() => setLegendHover(null)}
+                >
                     <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.Unreturnable}}/>
                     Unreturnable
                 </span>
-                <span className="inline-flex items-center gap-1">
+                <span
+                    className="inline-flex items-center gap-1"
+                    onMouseEnter={() => setLegendHover({label: "In play", value: serveStats.inPlay})}
+                    onMouseLeave={() => setLegendHover(null)}
+                >
                     <span className="h-2.5 w-2.5 rounded-full border border-zinc-400" style={{backgroundColor: legendColors.in_play}}/>
                     In play
                 </span>
-                <span className="inline-flex items-center gap-1">
+                <span
+                    className="inline-flex items-center gap-1"
+                    onMouseEnter={() => setLegendHover({label: "Faults / errors", value: serveStats.faults})}
+                    onMouseLeave={() => setLegendHover(null)}
+                >
                     <span className="h-2.5 w-2.5 rounded-full border border-zinc-400 bg-red-500"/>
                     Fault / error
                 </span>
+                {legendHover && (
+                    <div className="pointer-events-none absolute -top-9 rounded-md bg-zinc-900 px-2 py-1 text-[11px] text-zinc-100 shadow-md">
+                        {legendHover.label}: {legendHover.value}
+                    </div>
+                )}
             </div>
         </div>
     );

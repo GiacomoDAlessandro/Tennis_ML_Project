@@ -121,7 +121,14 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
             const color = first_outcome === "in_play"
                 ? (SERVE_COLORS[surface]?.[first_outcome] || "black")
                 : ((error || isError) ? "red" : (SERVE_COLORS[surface]?.[first_outcome] || "black"));
-            shots.push({x: firstLoc.x + jitter(20), y: firstLoc.y + jitter(20), color: color});
+            shots.push({
+                x: firstLoc.x + jitter(20),
+                y: firstLoc.y + jitter(20),
+                color: color,
+                score,
+                outcome: first_outcome,
+                serveNumber: 1,
+            });
         }
     }
 
@@ -139,7 +146,14 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
             const color = second_outcome === "in_play"
                 ? (SERVE_COLORS[surface]?.[second_outcome] || "black")
                 : (secondError ? "red" : (SERVE_COLORS[surface]?.[second_outcome] || "black"));
-            shots.push({x: secondLoc.x + jitter(20), y: secondLoc.y + jitter(20), color: color})
+            shots.push({
+                x: secondLoc.x + jitter(20),
+                y: secondLoc.y + jitter(20),
+                color: color,
+                score,
+                outcome: second_outcome,
+                serveNumber: 2,
+            })
         }
     }
 
