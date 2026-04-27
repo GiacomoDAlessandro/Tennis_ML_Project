@@ -30,6 +30,13 @@ function formatMatchDisplay(match, viewerName) {
     return `${head} vs. ${opponent ?? "Unknown"}`;
 }
 
+function getTennisAbstractPlayerUrl(playerName) {
+    const slug = String(playerName || "")
+        .trim()
+        .replace(/[\s-]+/g, "");
+    return `https://www.tennisabstract.com/cgi-bin/player.cgi?p=${encodeURIComponent(slug)}`;
+}
+
 export default function MatchSimulatorPage() {
     const [players, setPlayers] = useState([]);
     const [playersLoading, setPlayersLoading] = useState(true);
@@ -270,7 +277,14 @@ export default function MatchSimulatorPage() {
                             <div
                                 className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
-                                    {selectedNameOne}
+                                    <a
+                                        href={getTennisAbstractPlayerUrl(selectedNameOne)}
+                                        target="_blank"
+                                        rel="noreferrer noopener"
+                                        className="hover:text-zinc-900"
+                                    >
+                                        {selectedNameOne}
+                                    </a>
                                 </h3>
                                 <Combobox
                                     key={`${selectedNameOne}-${selectedSurfaceOne}-compare`}
@@ -304,7 +318,14 @@ export default function MatchSimulatorPage() {
                             <div
                                 className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
-                                    {selectedNameTwo}
+                                    <a
+                                        href={getTennisAbstractPlayerUrl(selectedNameTwo)}
+                                        target="_blank"
+                                        rel="noreferrer noopener"
+                                        className="hover:text-zinc-900"
+                                    >
+                                        {selectedNameTwo}
+                                    </a>
                                 </h3>
                                 <Combobox
                                     key={`${selectedNameTwo}-${selectedSurfaceTwo}-compare`}
@@ -393,7 +414,14 @@ export default function MatchSimulatorPage() {
                             <div
                                 className="flex flex-col items-center rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                                 <h3 className="mb-2 text-sm font-semibold text-zinc-800">
-                                    {selectedNameOne}
+                                    <a
+                                        href={getTennisAbstractPlayerUrl(selectedNameOne)}
+                                        target="_blank"
+                                        rel="noreferrer noopener"
+                                        className="hover:text-zinc-900"
+                                    >
+                                        {selectedNameOne}
+                                    </a>
                                 </h3>
                                 <TennisCourt surface={selectedSurfaceOne} playerName={selectedNameOne} matchId={selectedOnePlayerMatch?.value} courtScale={0.62}/>
                             </div>
