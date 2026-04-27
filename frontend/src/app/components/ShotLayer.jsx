@@ -47,6 +47,12 @@ export default function ShotLayer({s, matchId, playerName, surface, onStatsChang
         return outcome;
     };
 
+    const formatServeDirection = (direction) => {
+        if (!direction) return "N/A";
+        if (direction === "T") return "T";
+        return direction.charAt(0).toUpperCase() + direction.slice(1);
+    };
+
     useEffect(() => {
         onStatsChange?.(counts);
     }, [counts, onStatsChange]);
@@ -95,7 +101,7 @@ export default function ShotLayer({s, matchId, playerName, surface, onStatsChang
                         shadowOffsetY={2}
                     />
                     <Text
-                        text={`Set ${hoveredShot.shot.setScore ?? "N/A"}\nGames ${hoveredShot.shot.gameScore ?? "N/A"}\nPoint ${hoveredShot.shot.score ?? "N/A"}\nServe ${hoveredShot.shot.serveNumber ?? "?"}\n${formatOutcome(hoveredShot.shot.outcome)}`}
+                        text={`Set ${hoveredShot.shot.setScore ?? "N/A"}\nGames ${hoveredShot.shot.gameScore ?? "N/A"}\nPoint ${hoveredShot.shot.score ?? "N/A"}\nServe ${hoveredShot.shot.serveNumber ?? "?"} (${formatServeDirection(hoveredShot.shot.serveDirection)})\n${formatOutcome(hoveredShot.shot.outcome)}`}
                         fontSize={12}
                         fontStyle="500"
                         padding={8}

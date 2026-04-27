@@ -28,41 +28,41 @@ const Serve_Errors = {
     D: {
         wide: {
             "Net error": {x: 370, y: 440},
-            "Deep error": {x: 370, y: 195},
+            "Deep error": {x: 340, y: 195},
             "Wide error": {x: 420, y: 280},
-            "Wide and net error": {x: 420, y: 155},
+            "Wide and net error": {x: 410, y: 430},
         },
         body: {
             "Net error": {x: 290, y: 440},
             "Deep error": {x: 290, y: 195},
             "Wide error": {x: 390, y: 280},
-            "Wide and net error": {x: 390, y: 155},
+            "Wide and net error": {x: 370, y: 430},
         },
         T: {
             "Net error": {x: 220, y: 440},
-            "Deep error": {x: 220, y: 195},
+            "Deep error": {x: 240, y: 195},
             "Wide error": {x: 205, y: 280},
-            "Wide and net error": {x: 205, y: 155},
+            "Wide and net error": {x: 205, y: 430},
         },
     },
     A: {
         wide: {
             "Net error": {x: 60, y: 450},
-            "Deep error": {x: 60, y: 195},
+            "Deep error": {x: 95, y: 195},
             "Wide error": {x: 20, y: 280},
-            "Wide and net error": {x: 20, y: 155},
+            "Wide and net error": {x: 30, y: 430},
         },
         body: {
             "Net error": {x: 160, y: 450},
             "Deep error": {x: 160, y: 195},
             "Wide error": {x: 60, y: 280},
-            "Wide and net error": {x: 60, y: 155},
+            "Wide and net error": {x: 80, y: 430},
         },
         T: {
             "Net error": {x: 220, y: 450},
             "Deep error": {x: 220, y: 195},
             "Wide error": {x: 245, y: 280},
-            "Wide and net error": {x: 245, y: 155},
+            "Wide and net error": {x: 245, y: 430},
         },
     }
 }
@@ -128,6 +128,7 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
                 score,
                 outcome: first_outcome,
                 serveNumber: 1,
+                serveDirection: first_direction,
             });
         }
     }
@@ -153,6 +154,7 @@ export function getServeCoordinates(score, first_direction, first_outcome, secon
                 score,
                 outcome: second_outcome,
                 serveNumber: 2,
+                serveDirection: second_direction,
             })
         }
     }

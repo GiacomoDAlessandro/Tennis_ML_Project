@@ -12,7 +12,7 @@ export default function Header() {
         <Link
           href="/why"
           className="text-base font-semibold tracking-tight text-zinc-900 transition-opacity hover:opacity-70">
-          Why
+          About
         </Link>
       </div>
     </header>
